@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(C:/Users/Lenovo/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh *)",
+      "Bash(npm install *)",
+      "Bash(npm ls *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('peerDeps:', json.dumps\\(d.get\\('peerDependencies',{}\\), indent=2\\)\\); print\\('jsx runtime:', d.get\\('jsxRuntime','not specified'\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('version:', d.get\\('version'\\)\\); print\\('peerDeps:', json.dumps\\(d.get\\('peerDependencies',{}\\), indent=2\\)\\)\")",
+      "Bash(npm uninstall *)",
+      "Bash(npm test *)",
+      "Bash(xargs grep *)",
+      "Bash(node --experimental-vm-modules -e ' *)",
+      "Bash(npm list *)",
+      "Bash(npm run *)",
+      "Bash(node dist/index.js)",
+      "Bash(echo \"exit: $?\")"
+    ]
+  }
+}

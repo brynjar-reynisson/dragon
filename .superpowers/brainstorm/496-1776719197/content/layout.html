@@ -1,0 +1,93 @@
+<h2>TUI Layout Options</h2>
+<p class="subtitle">How should the coding agent's chat interface be arranged in the terminal?</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:12px;background:#1e1e2e;color:#cdd6f4;padding:12px;border-radius:6px;line-height:1.6">
+        <div style="color:#89b4fa;border-bottom:1px solid #313244;padding-bottom:6px;margin-bottom:8px">dragon — coding agent</div>
+        <div style="color:#a6e3a1">▸ You: how do I debounce a function in JS?</div>
+        <div style="color:#cba6f7;margin-top:4px">▸ Agent:</div>
+        <div style="background:#313244;padding:6px;border-radius:4px;margin-top:4px;color:#cdd6f4;font-size:11px">
+          function debounce(fn, delay) {<br>
+          &nbsp;&nbsp;let t;<br>
+          &nbsp;&nbsp;return (...args) => {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;clearTimeout(t);<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;t = setTimeout(() => fn(...args), delay);<br>
+          &nbsp;&nbsp;};<br>
+          }
+        </div>
+        <div style="border-top:1px solid #313244;margin-top:8px;padding-top:6px;color:#6c7086">
+          [lang: auto] ▸ Type your request...
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Full-height chat</h3>
+      <p>Scrollable message history fills the terminal. Input at the bottom. Simple and familiar (like a terminal chat app).</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:12px;background:#1e1e2e;color:#cdd6f4;padding:12px;border-radius:6px;line-height:1.6">
+        <div style="color:#89b4fa;border-bottom:1px solid #313244;padding-bottom:6px;margin-bottom:8px">dragon — coding agent</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-right:1px solid #313244;padding-right:8px">
+            <div style="color:#6c7086;font-size:10px;margin-bottom:4px">HISTORY</div>
+            <div style="color:#a6e3a1;font-size:11px">debounce fn</div>
+            <div style="color:#6c7086;font-size:11px">throttle fn</div>
+            <div style="color:#6c7086;font-size:11px">deep clone</div>
+          </div>
+          <div style="flex:2">
+            <div style="color:#6c7086;font-size:10px;margin-bottom:4px">SNIPPET</div>
+            <div style="background:#313244;padding:6px;border-radius:4px;font-size:10px">
+              function debounce(fn, delay) {<br>
+              &nbsp;&nbsp;let t;<br>
+              &nbsp;&nbsp;return (...args) => {<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;clearTimeout(t);<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;t = setTimeout(...);<br>
+              &nbsp;&nbsp;};<br>
+              }
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #313244;margin-top:8px;padding-top:6px;color:#6c7086">
+          [lang: auto] ▸ Type your request...
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Sidebar + snippet panel</h3>
+      <p>Left sidebar shows query history. Right panel shows current snippet. Good for browsing past results.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:12px;background:#1e1e2e;color:#cdd6f4;padding:12px;border-radius:6px;line-height:1.6">
+        <div style="color:#89b4fa;border-bottom:1px solid #313244;padding-bottom:6px;margin-bottom:8px">dragon — coding agent</div>
+        <div style="color:#6c7086;font-size:11px;margin-bottom:4px">▸ You: how do I debounce a function?</div>
+        <div style="height:1px;background:#313244;margin:6px 0"></div>
+        <div style="color:#cba6f7;font-size:10px;margin-bottom:4px">SUGGESTION — JavaScript</div>
+        <div style="background:#313244;padding:8px;border-radius:4px;font-size:11px;flex:1">
+          function debounce(fn, delay) {<br>
+          &nbsp;&nbsp;let t;<br>
+          &nbsp;&nbsp;return (...args) => {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;clearTimeout(t);<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;t = setTimeout(() => fn(...args), delay);<br>
+          &nbsp;&nbsp;};<br>
+          }
+        </div>
+        <div style="border-top:1px solid #313244;margin-top:8px;padding-top:6px;display:flex;gap:12px;font-size:10px;color:#6c7086">
+          <span>[lang: auto]</span><span>▸ new request clears this view</span>
+        </div>
+        <div style="margin-top:4px;color:#6c7086;font-size:11px">▸ Type your request...</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Input + focused snippet</h3>
+      <p>Input at top, large snippet display below. Each new request replaces the previous one. Minimal, distraction-free.</p>
+    </div>
+  </div>
+</div>
