@@ -39,12 +39,12 @@ describe('createModel', () => {
 
   it('constructs ChatOpenAI for gpt-4o', () => {
     createModel('gpt-4o');
-    expect(ChatOpenAI).toHaveBeenCalledWith({ model: 'gpt-4o', openAIApiKey: 'test-oai' });
+    expect(ChatOpenAI).toHaveBeenCalledWith({ model: 'gpt-4o', apiKey: 'test-oai' });
   });
 
   it('constructs ChatOpenAI for gpt-4o-mini', () => {
     createModel('gpt-4o-mini');
-    expect(ChatOpenAI).toHaveBeenCalledWith({ model: 'gpt-4o-mini', openAIApiKey: 'test-oai' });
+    expect(ChatOpenAI).toHaveBeenCalledWith({ model: 'gpt-4o-mini', apiKey: 'test-oai' });
   });
 
   it('throws for unknown model id', () => {

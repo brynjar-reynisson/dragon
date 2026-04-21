@@ -13,7 +13,11 @@ export function createModel(id: string): BaseChatModel {
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY is required for Claude models.');
     return new ChatAnthropic({ model: id, anthropicApiKey: apiKey });
   }
-  const apiKey = process.env['OPENAI_API_KEY'];
-  if (!apiKey) throw new Error('OPENAI_API_KEY is required for OpenAI models.');
-  return new ChatOpenAI({ model: id, openAIApiKey: apiKey });
+  if (info.provider === 'openai') {
+    const apiKey = process.env['OPENAI_API_KEY'];
+    if (!apiKey) throw new Error('OPENAI_API_KEY is required for OpenAI models.');
+    return new ChatOpenAI({ model: id, apiKey });
+  }
+  const _exhaustive: never = info.provider;
+  throw new Error(`Unsupported provider: ${_exhaustive}`);
 }
