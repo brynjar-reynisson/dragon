@@ -2,11 +2,13 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'ink-testing-library';
 import { InputBar } from './InputBar.js';
+import { MODELS } from '../models/list.js';
 
 function makeProps(overrides: Partial<Parameters<typeof InputBar>[0]> = {}) {
   return {
     disabled: false,
     selectedModel: 'claude-sonnet-4-6',
+    models: MODELS,
     onSubmit: vi.fn(),
     onModelChange: vi.fn(),
     ...overrides,
@@ -50,7 +52,7 @@ describe('InputBar', () => {
     expect(lastFrame()).toContain('▶ claude-haiku-4-5-20251001');
   });
 
-  it('calls onModelChange with selected model on Enter in picker', () => {
+  it('calls onModelChange with selected model id on Enter in picker', () => {
     const onModelChange = vi.fn();
     const { stdin } = render(<InputBar {...makeProps({ onModelChange })} />);
     stdin.write('/model');
@@ -86,12 +88,22 @@ describe('InputBar', () => {
 
   it('Ctrl+L enters language mode showing lang: label', () => {
     const { lastFrame, stdin } = render(<InputBar {...makeProps()} />);
-    stdin.write('\x0c'); // Ctrl+L (ASCII 12)
+    stdin.write('\x0c');
     expect(lastFrame()).toContain('lang:');
   });
 
   it('still renders when disabled', () => {
     const { lastFrame } = render(<InputBar {...makeProps({ disabled: true })} />);
     expect(lastFrame()).toContain('[claude-sonnet-4-6]');
+  });
+
+  it('shows dynamically provided models in picker', () => {
+    const extraModels = [
+      ...MODELS,
+      { id: 'llama3.2:latest', provider: 'ollama' as const },
+    ];
+    const { lastFrame, stdin } = render(<InputBar {...makeProps({ models: extraModels })} />);
+    stdin.write('/model');
+    expect(lastFrame()).toContain('llama3.2:latest');
   });
 });

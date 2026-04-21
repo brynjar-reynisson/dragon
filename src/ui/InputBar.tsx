@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
-import { MODELS } from '../models/list.js';
+import type { ModelInfo } from '../models/list.js';
 
 type InputMode = 'default' | 'editingLang' | 'selectingModel';
 type ModelSelectMode = 'picker' | 'freetext';
@@ -9,11 +9,12 @@ type ModelSelectMode = 'picker' | 'freetext';
 interface Props {
   disabled: boolean;
   selectedModel: string;
+  models: ModelInfo[];
   onSubmit: (query: string, language?: string) => void;
   onModelChange: (id: string) => void;
 }
 
-export function InputBar({ disabled, selectedModel, onSubmit, onModelChange }: Props) {
+export function InputBar({ disabled, selectedModel, models, onSubmit, onModelChange }: Props) {
   const [query, setQuery] = useState('');
   const [language, setLanguage] = useState('');
   const [inputMode, setInputMode] = useState<InputMode>('default');
@@ -79,12 +80,12 @@ export function InputBar({ disabled, selectedModel, onSubmit, onModelChange }: P
           return;
         }
         if (key.downArrow) {
-          const next = Math.min(MODELS.length - 1, modelCursorRef.current + 1);
+          const next = Math.min(models.length - 1, modelCursorRef.current + 1);
           setModelCursorSync(next);
           return;
         }
         if (key.return) {
-          onModelChange(MODELS[modelCursorRef.current].id);
+          onModelChange(models[modelCursorRef.current].id);
           setInputModeSync('default');
           return;
         }
@@ -180,7 +181,7 @@ export function InputBar({ disabled, selectedModel, onSubmit, onModelChange }: P
       </Box>
       {inputMode === 'selectingModel' && modelSelectMode === 'picker' && (
         <Box flexDirection="column">
-          {MODELS.map((m, i) => (
+          {models.map((m, i) => (
             <Text key={m.id} color={i === modelCursor ? 'cyan' : undefined}>
               {i === modelCursor ? '▶ ' : '  '}{m.id}
             </Text>
