@@ -6,17 +6,16 @@ import type { Agent } from '../agent/Agent.js';
 
 interface Props {
   agent: Agent;
+  initialModelId: string;
 }
 
-export function App({ agent }: Props) {
+export function App({ agent, initialModelId }: Props) {
   const [snippet, setSnippet] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState(initialModelId);
   const { setRawMode } = useStdin();
 
-  // Activate raw mode synchronously (useLayoutEffect) so stdin is ready
-  // immediately after mount — this ensures tests can write to stdin right
-  // after render() without needing an extra async tick.
   useEffect(() => {
     setRawMode(true);
     return () => setRawMode(false);
@@ -36,10 +35,25 @@ export function App({ agent }: Props) {
     }
   };
 
+  const handleModelChange = (id: string) => {
+    try {
+      agent.setModel(id);
+      setSelectedModel(id);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
   return (
     <Box flexDirection="column" padding={1}>
       <SnippetView snippet={snippet} loading={loading} error={error} />
-      <InputBar disabled={loading} onSubmit={handleSubmit} />
+      <InputBar
+        disabled={loading}
+        selectedModel={selectedModel}
+        onSubmit={handleSubmit}
+        onModelChange={handleModelChange}
+      />
     </Box>
   );
 }
