@@ -24,9 +24,9 @@ Copy `.env.example` to `.env` and fill in the required API key for your chosen p
 
 | Env var | Values | Default |
 |---|---|---|
-| `DRAGON_PROVIDER` | `claude`, `openai` | `claude` |
-| `ANTHROPIC_API_KEY` | string | required for claude |
-| `OPENAI_API_KEY` | string | required for openai |
+| `DRAGON_MODEL` | any model ID from `src/models/list.ts` | `claude-sonnet-4-6` |
+| `ANTHROPIC_API_KEY` | string | required for Claude models |
+| `OPENAI_API_KEY` | string | required for OpenAI models |
 
 ## Architecture
 
