@@ -17,7 +17,7 @@ export async function fetchOllamaModels(): Promise<ModelInfo[]> {
     for (const model of data.models) {
       const family = model.name.split(':')[0];
       const existing = groups.get(family);
-      if (!existing || model.modified_at > existing.modified_at) {
+      if (!existing || new Date(model.modified_at) > new Date(existing.modified_at)) {
         groups.set(family, model);
       }
     }
