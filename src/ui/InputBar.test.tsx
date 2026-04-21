@@ -84,6 +84,12 @@ describe('InputBar', () => {
     expect(lastFrame()).toContain('Ctrl+L');
   });
 
+  it('Ctrl+L enters language mode showing lang: label', () => {
+    const { lastFrame, stdin } = render(<InputBar {...makeProps()} />);
+    stdin.write('\x0c'); // Ctrl+L (ASCII 12)
+    expect(lastFrame()).toContain('lang:');
+  });
+
   it('still renders when disabled', () => {
     const { lastFrame } = render(<InputBar {...makeProps({ disabled: true })} />);
     expect(lastFrame()).toContain('[claude-sonnet-4-6]');
