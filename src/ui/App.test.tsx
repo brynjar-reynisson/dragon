@@ -4,6 +4,10 @@ import { render } from 'ink-testing-library';
 import { App } from './App.js';
 import type { Agent } from '../agent/Agent.js';
 
+vi.mock('../models/ollama.js', () => ({
+  fetchOllamaModels: vi.fn().mockResolvedValue([]),
+}));
+
 describe('App', () => {
   let agent: Agent;
 
@@ -43,11 +47,20 @@ describe('App', () => {
     expect(lastFrame()).toContain('API rate limit');
   });
 
-  it('calls agent.setModel when model is selected', () => {
+  it('calls agent.setModel with resolved ModelInfo when model is selected', () => {
     const { stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" />);
     stdin.write('/model');
     stdin.write('\r');
-    expect(agent.setModel).toHaveBeenCalledWith('claude-sonnet-4-6');
+    expect(agent.setModel).toHaveBeenCalledWith({ id: 'claude-sonnet-4-6', provider: 'anthropic' });
+  });
+
+  it('falls back to ollama provider for free-text model names not in the list', () => {
+    const { stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" />);
+    stdin.write('/model');
+    stdin.write(' ');
+    stdin.write('deepseek-r1:14b');
+    stdin.write('\r');
+    expect(agent.setModel).toHaveBeenCalledWith({ id: 'deepseek-r1:14b', provider: 'ollama' });
   });
 
   it('shows error when setModel throws', () => {

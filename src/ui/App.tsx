@@ -3,6 +3,8 @@ import { Box, useStdin } from 'ink';
 import { InputBar } from './InputBar.js';
 import { SnippetView } from './SnippetView.js';
 import type { Agent } from '../agent/Agent.js';
+import { MODELS, type ModelInfo } from '../models/list.js';
+import { fetchOllamaModels } from '../models/ollama.js';
 
 interface Props {
   agent: Agent;
@@ -14,12 +16,19 @@ export function App({ agent, initialModelId }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(initialModelId);
+  const [models, setModels] = useState<ModelInfo[]>(MODELS);
   const { setRawMode } = useStdin();
 
   useEffect(() => {
     setRawMode(true);
     return () => setRawMode(false);
   }, [setRawMode]);
+
+  useEffect(() => {
+    fetchOllamaModels().then(ollamaModels => {
+      if (ollamaModels.length > 0) setModels([...MODELS, ...ollamaModels]);
+    });
+  }, []);
 
   const handleSubmit = async (query: string, language?: string) => {
     setLoading(true);
@@ -36,8 +45,9 @@ export function App({ agent, initialModelId }: Props) {
   };
 
   const handleModelChange = (id: string) => {
+    const info: ModelInfo = models.find(m => m.id === id) ?? { id, provider: 'ollama' };
     try {
-      agent.setModel(id);
+      agent.setModel(info);
       setSelectedModel(id);
       setError(null);
     } catch (err) {
@@ -51,6 +61,7 @@ export function App({ agent, initialModelId }: Props) {
       <InputBar
         disabled={loading}
         selectedModel={selectedModel}
+        models={models}
         onSubmit={handleSubmit}
         onModelChange={handleModelChange}
       />
