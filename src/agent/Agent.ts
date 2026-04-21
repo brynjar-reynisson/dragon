@@ -1,16 +1,19 @@
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { createModel } from '../models/registry.js';
+import { MODELS, type ModelInfo } from '../models/list.js';
 
 export class Agent {
   private model: BaseChatModel;
 
   constructor(initialModelId: string) {
-    this.model = createModel(initialModelId);
+    const info = MODELS.find(m => m.id === initialModelId);
+    if (!info) throw new Error(`Unknown model: "${initialModelId}"`);
+    this.model = createModel(info);
   }
 
-  setModel(id: string): void {
-    this.model = createModel(id);
+  setModel(info: ModelInfo): void {
+    this.model = createModel(info);
   }
 
   async suggest(prompt: string, language?: string): Promise<string> {

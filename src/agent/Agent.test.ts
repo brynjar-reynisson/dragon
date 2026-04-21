@@ -15,9 +15,13 @@ describe('Agent', () => {
     vi.mocked(createModel).mockReturnValue({ invoke: mockInvoke } as unknown as BaseChatModel);
   });
 
-  it('calls createModel with initial model id on construction', () => {
+  it('resolves ModelInfo and calls createModel on construction', () => {
     new Agent('claude-sonnet-4-6');
-    expect(createModel).toHaveBeenCalledWith('claude-sonnet-4-6');
+    expect(createModel).toHaveBeenCalledWith({ id: 'claude-sonnet-4-6', provider: 'anthropic' });
+  });
+
+  it('throws for unknown model id in constructor', () => {
+    expect(() => new Agent('unknown-model')).toThrow('Unknown model: "unknown-model"');
   });
 
   it('returns trimmed text from suggest', async () => {
@@ -34,11 +38,11 @@ describe('Agent', () => {
     expect(systemMsg.content).toContain('Use rust');
   });
 
-  it('setModel calls createModel with new id', () => {
+  it('setModel calls createModel with the provided ModelInfo', () => {
     const agent = new Agent('claude-sonnet-4-6');
     vi.mocked(createModel).mockClear();
-    agent.setModel('gpt-4o');
-    expect(createModel).toHaveBeenCalledWith('gpt-4o');
+    agent.setModel({ id: 'llama3.2:latest', provider: 'ollama' });
+    expect(createModel).toHaveBeenCalledWith({ id: 'llama3.2:latest', provider: 'ollama' });
   });
 
   it('throws when response content is not a string', async () => {
