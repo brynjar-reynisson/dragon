@@ -1,4 +1,4 @@
-export type ModelProvider = 'anthropic' | 'openai';
+export type ModelProvider = 'anthropic' | 'openai' | 'ollama';
 
 export interface ModelInfo {
   id: string;
