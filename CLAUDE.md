@@ -32,31 +32,33 @@ Copy `.env.example` to `.env` and fill in the required API key for your chosen p
 
 Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for terminals). It accepts natural-language queries and returns raw code snippets with syntax highlighting.
 
-**Data flow:** `InputBar` (query + language) → `App.onSubmit` → `Agent.suggest()` → active `Provider` → snippet string → `SnippetView` renders with `cli-highlight`.
+**Data flow:** `InputBar` (query + language) → `App.onSubmit` → `Agent.suggest()` → LangChain `BaseChatModel` → snippet string → `SnippetView` renders with `cli-highlight`.
 
-### Provider abstraction (`src/providers/`)
+### Model layer (`src/models/`)
 
-- `types.ts` — `Provider` interface: `suggest(prompt, language?): Promise<string>`
-- `claude.ts` — Anthropic SDK implementation
-- `openai.ts` — OpenAI SDK implementation
-- Provider selected at startup via `DRAGON_PROVIDER` env var; instantiated in `src/index.tsx`
+- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`
+- `registry.ts` — `createModel(id): BaseChatModel`; constructs `ChatAnthropic` or `ChatOpenAI` from env API keys; throws immediately for unknown IDs or missing keys
 
 ### Agent (`src/agent/Agent.ts`)
 
-Thin orchestrator: constructor takes a `Provider`, exposes `suggest(query, language?)`. Builds a system prompt that instructs the model to return only raw code — no markdown fences, no prose.
+Owns a `BaseChatModel` instance. Constructor takes `initialModelId` and calls `createModel()`. Exposes `setModel(id)` for runtime switching and `suggest(query, language?)` which builds `[SystemMessage, HumanMessage]` and calls `model.invoke()`.
 
 ### UI (`src/ui/`)
 
-- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `language`); renders `InputBar` above `SnippetView`
-- `InputBar.tsx` — text input; `Ctrl+L` toggles language-override mode (Tab to confirm, Esc to clear); shows `[lang: x]` prefix when set; input is disabled while loading
+- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `language`, `selectedModel`); `handleModelChange` calls `agent.setModel()` and updates `selectedModel`; renders `InputBar` above `SnippetView`
+- `InputBar.tsx` — three modes: `default` (normal query), `editingLang` (`Ctrl+L`), `selectingModel` (triggered by typing `/model`). Shows `[model-id]` badge pinned right. Model picker shows arrow-key list; `Space` switches to free-text model entry; `Esc` cancels.
 - `SnippetView.tsx` — displays snippet via `cli-highlight`; shows spinner while loading; one-line red error on failure; usage hint on empty state
 
 ### Key bindings
 
 | Key | Action |
 |---|---|
-| `Enter` | Submit query |
+| `Enter` | Submit query (or confirm model selection) |
 | `Ctrl+L` | Toggle language override |
+| `/model` | Open model selector |
+| `↑` / `↓` | Navigate model picker |
+| `Space` | Switch to free-text model entry |
+| `Esc` | Cancel model selection |
 | `Ctrl+C` | Exit |
 
 ## Testing
