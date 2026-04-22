@@ -24,39 +24,43 @@ Copy `.env.example` to `.env` and fill in the required API key for your chosen p
 
 | Env var | Values | Default |
 |---|---|---|
-| `DRAGON_PROVIDER` | `claude`, `openai` | `claude` |
-| `ANTHROPIC_API_KEY` | string | required for claude |
-| `OPENAI_API_KEY` | string | required for openai |
+| `DRAGON_MODEL` | static model ID from `src/models/list.ts` only (Ollama models are selected at runtime via `/model`) | `claude-sonnet-4-6` |
+| `ANTHROPIC_API_KEY` | string | required for Claude models |
+| `OPENAI_API_KEY` | string | required for OpenAI models |
 
 ## Architecture
 
 Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for terminals). It accepts natural-language queries and returns raw code snippets with syntax highlighting.
 
-**Data flow:** `InputBar` (query + language) → `App.onSubmit` → `Agent.suggest()` → active `Provider` → snippet string → `SnippetView` renders with `cli-highlight`.
+**Data flow:** `InputBar` (query + language) → `App.onSubmit` → `Agent.suggest()` → LangChain `BaseChatModel` → snippet string → `SnippetView` renders with `cli-highlight`.
 
-### Provider abstraction (`src/providers/`)
+### Model layer (`src/models/`)
 
-- `types.ts` — `Provider` interface: `suggest(prompt, language?): Promise<string>`
-- `claude.ts` — Anthropic SDK implementation
-- `openai.ts` — OpenAI SDK implementation
-- Provider selected at startup via `DRAGON_PROVIDER` env var; instantiated in `src/index.tsx`
+- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`
+- `registry.ts` — `createModel(info: ModelInfo): BaseChatModel`; switches on `provider`; constructs `ChatAnthropic`, `ChatOpenAI`, or `ChatOllama`; throws for unknown provider or missing API key
+- `ollama.ts` — `fetchOllamaModels()`: hits `GET http://localhost:11434/api/tags` (2 s timeout); deduplicates to one model per base name (newest `modified_at`); returns `[]` on any error
+- `persistence.ts` — `loadSavedModel(): string | null`; `saveModel(id: string): void`; state file at `~/.dragon/state.json`; errors silently swallowed
 
 ### Agent (`src/agent/Agent.ts`)
 
-Thin orchestrator: constructor takes a `Provider`, exposes `suggest(query, language?)`. Builds a system prompt that instructs the model to return only raw code — no markdown fences, no prose.
+Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it to a `ModelInfo` from `MODELS`, and throws for unknown startup model IDs. Exposes `setModel(info: ModelInfo)` for runtime switching (caller resolves provider). `suggest(query, language?)` builds `[SystemMessage, HumanMessage]` and calls `model.invoke()`.
 
 ### UI (`src/ui/`)
 
-- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `language`); renders `InputBar` above `SnippetView`
-- `InputBar.tsx` — text input; `Ctrl+L` toggles language-override mode (Tab to confirm, Esc to clear); shows `[lang: x]` prefix when set; input is disabled while loading
+- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `notice`, `selectedModel`); `savedModelId` prop drives deferred Ollama validation (silently switches if found, sets `notice` if not); `handleModelChange` calls `agent.setModel()`, `saveModel()`, and clears notice; renders `SnippetView`, optional dim notice line, then `InputBar`
+- `InputBar.tsx` — three modes: `default` (normal query), `editingLang` (`Ctrl+L`), `selectingModel` (triggered by typing `/model`). Shows `[model-id]` badge pinned right. Model picker shows arrow-key list; `Space` switches to free-text model entry; `Esc` cancels.
 - `SnippetView.tsx` — displays snippet via `cli-highlight`; shows spinner while loading; one-line red error on failure; usage hint on empty state
 
 ### Key bindings
 
 | Key | Action |
 |---|---|
-| `Enter` | Submit query |
+| `Enter` | Submit query (or confirm model selection) |
 | `Ctrl+L` | Toggle language override |
+| `/model` | Open model selector |
+| `↑` / `↓` | Navigate model picker |
+| `Space` | Switch to free-text model entry |
+| `Esc` | Cancel model selection |
 | `Ctrl+C` | Exit |
 
 ## Testing

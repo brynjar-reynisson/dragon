@@ -1,36 +1,136 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from 'ink-testing-library';
 import { App } from './App.js';
 import type { Agent } from '../agent/Agent.js';
 
+vi.mock('../models/ollama.js', () => ({
+  fetchOllamaModels: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('../models/persistence.js', () => ({
+  saveModel: vi.fn(),
+}));
+
 describe('App', () => {
+  let agent: Agent;
+
+  beforeEach(() => {
+    agent = {
+      suggest: vi.fn(),
+      setModel: vi.fn(),
+    } as unknown as Agent;
+  });
+
   it('renders input bar and empty snippet hint on load', () => {
-    const agent = { suggest: vi.fn() } as unknown as Agent;
-    const { lastFrame } = render(<App agent={agent} />);
+    const { lastFrame } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
     expect(lastFrame()).toContain('Ctrl+L');
     expect(lastFrame()).toContain('Type a request');
   });
 
+  it('displays the initial model id', () => {
+    const { lastFrame } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    expect(lastFrame()).toContain('claude-sonnet-4-6');
+  });
+
   it('shows snippet after successful suggest', async () => {
-    const agent = {
-      suggest: vi.fn().mockResolvedValue('const x = 1;'),
-    } as unknown as Agent;
-    const { lastFrame, stdin } = render(<App agent={agent} />);
+    vi.mocked(agent.suggest).mockResolvedValue('const x = 1;');
+    const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
     stdin.write('declare a variable');
     stdin.write('\r');
     await new Promise(r => setTimeout(r, 50));
     expect(lastFrame()).toContain('const x = 1;');
   });
 
-  it('shows error message when suggest fails', async () => {
-    const agent = {
-      suggest: vi.fn().mockRejectedValue(new Error('API rate limit')),
-    } as unknown as Agent;
-    const { lastFrame, stdin } = render(<App agent={agent} />);
+  it('shows error when suggest fails', async () => {
+    vi.mocked(agent.suggest).mockRejectedValue(new Error('API rate limit'));
+    const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
     stdin.write('foo');
     stdin.write('\r');
     await new Promise(r => setTimeout(r, 50));
     expect(lastFrame()).toContain('API rate limit');
+  });
+
+  it('calls agent.setModel with resolved ModelInfo when model is selected', () => {
+    const { stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('/model');
+    stdin.write('\r');
+    expect(agent.setModel).toHaveBeenCalledWith({ id: 'claude-sonnet-4-6', provider: 'anthropic' });
+  });
+
+  it('falls back to ollama provider for free-text model names not in the list', () => {
+    const { stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('/model');
+    stdin.write(' ');
+    stdin.write('deepseek-r1:14b');
+    stdin.write('\r');
+    expect(agent.setModel).toHaveBeenCalledWith({ id: 'deepseek-r1:14b', provider: 'ollama' });
+  });
+
+  it('shows error when setModel throws', () => {
+    vi.mocked(agent.setModel).mockImplementation(() => { throw new Error('Unknown model'); });
+    const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('/model');
+    stdin.write('\r');
+    expect(lastFrame()).toContain('Unknown model');
+  });
+
+  it('shows notice when savedModelId is not found after Ollama fetch', async () => {
+    const { fetchOllamaModels } = await import('../models/ollama.js');
+    vi.mocked(fetchOllamaModels).mockResolvedValueOnce([]);
+    const { lastFrame } = render(
+      <App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId="llama3.2" />
+    );
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).toContain('Previously selected model "llama3.2" is not available.');
+  });
+
+  it('silently switches to savedModelId when found in Ollama results', async () => {
+    const { fetchOllamaModels } = await import('../models/ollama.js');
+    vi.mocked(fetchOllamaModels).mockResolvedValueOnce([{ id: 'llama3.2', provider: 'ollama' }]);
+    render(
+      <App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId="llama3.2" />
+    );
+    await new Promise(r => setTimeout(r, 50));
+    expect(agent.setModel).toHaveBeenCalledWith({ id: 'llama3.2', provider: 'ollama' });
+  });
+
+  it('does not show notice when savedModelId equals initialModelId (already resolved at startup)', async () => {
+    const { fetchOllamaModels } = await import('../models/ollama.js');
+    vi.mocked(fetchOllamaModels).mockResolvedValueOnce([]);
+    const { lastFrame } = render(
+      <App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId="claude-sonnet-4-6" />
+    );
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).not.toContain('Previously selected model');
+  });
+
+  it('clears notice when a new model is selected', async () => {
+    const { fetchOllamaModels } = await import('../models/ollama.js');
+    vi.mocked(fetchOllamaModels).mockResolvedValueOnce([]);
+    const { lastFrame, stdin } = render(
+      <App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId="llama3.2" />
+    );
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).toContain('Previously selected model "llama3.2" is not available.');
+    stdin.write('/model');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).not.toContain('Previously selected model');
+  });
+
+  it('clears notice when a query is submitted', async () => {
+    const { fetchOllamaModels } = await import('../models/ollama.js');
+    vi.mocked(fetchOllamaModels).mockResolvedValueOnce([]);
+    vi.mocked(agent.suggest).mockResolvedValue('const x = 1;');
+    const { lastFrame, stdin } = render(
+      <App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId="llama3.2" />
+    );
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).toContain('Previously selected model "llama3.2" is not available.');
+    stdin.write('foo');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).not.toContain('Previously selected model');
   });
 });
