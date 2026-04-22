@@ -10,11 +10,12 @@ interface Props {
   disabled: boolean;
   selectedModel: string;
   models: ModelInfo[];
+  unavailableNotices: string[];
   onSubmit: (query: string, language?: string) => void;
   onModelChange: (id: string) => void;
 }
 
-export function InputBar({ disabled, selectedModel, models, onSubmit, onModelChange }: Props) {
+export function InputBar({ disabled, selectedModel, models, unavailableNotices, onSubmit, onModelChange }: Props) {
   const [query, setQuery] = useState('');
   const [language, setLanguage] = useState('');
   const [inputMode, setInputMode] = useState<InputMode>('default');
@@ -185,6 +186,9 @@ export function InputBar({ disabled, selectedModel, models, onSubmit, onModelCha
             <Text key={m.id} color={i === modelCursor ? 'cyan' : undefined}>
               {i === modelCursor ? '▶ ' : '  '}{m.id}
             </Text>
+          ))}
+          {unavailableNotices.map(msg => (
+            <Text key={msg} dimColor>{msg}</Text>
           ))}
         </Box>
       )}

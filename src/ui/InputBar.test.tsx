@@ -9,6 +9,7 @@ function makeProps(overrides: Partial<Parameters<typeof InputBar>[0]> = {}) {
     disabled: false,
     selectedModel: 'claude-sonnet-4-6',
     models: MODELS,
+    unavailableNotices: [],
     onSubmit: vi.fn(),
     onModelChange: vi.fn(),
     ...overrides,
@@ -105,5 +106,19 @@ describe('InputBar', () => {
     const { lastFrame, stdin } = render(<InputBar {...makeProps({ models: extraModels })} />);
     stdin.write('/model');
     expect(lastFrame()).toContain('llama3.2:latest');
+  });
+
+  it('shows unavailable provider notices below model list in picker', () => {
+    const { lastFrame, stdin } = render(
+      <InputBar {...makeProps({ unavailableNotices: ['Google models are not available without GOOGLE_API_KEY'] })} />
+    );
+    stdin.write('/model');
+    expect(lastFrame()).toContain('Google models are not available without GOOGLE_API_KEY');
+  });
+
+  it('does not show notice text when unavailableNotices is empty', () => {
+    const { lastFrame, stdin } = render(<InputBar {...makeProps({ unavailableNotices: [] })} />);
+    stdin.write('/model');
+    expect(lastFrame()).not.toContain('not available');
   });
 });
