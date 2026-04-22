@@ -146,6 +146,20 @@ describe('App', () => {
     expect(lastFrame()).not.toContain('Previously selected model');
   });
 
+  it('pushes previous query and snippet into history when a new request is submitted', async () => {
+    vi.mocked(agent.suggest).mockResolvedValue('const x = 1;');
+    const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('first query');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).toContain('const x = 1;');
+    stdin.write('second query');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).toContain('> first query');
+    expect(lastFrame()).toContain('> second query');
+  });
+
   it('passes unavailable provider notices to InputBar', async () => {
     const { unavailableProviderMessages } = await import('../models/availability.js');
     vi.mocked(unavailableProviderMessages).mockReturnValueOnce([

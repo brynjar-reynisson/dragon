@@ -15,6 +15,7 @@ interface Props {
 }
 
 export function App({ agent, initialModelId, savedModelId }: Props) {
+  const [history, setHistory] = useState<Array<{ query: string; snippet: string; error: string | null }>>([]);
   const [snippet, setSnippet] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,9 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
   }, [savedModelId, initialModelId, agent]);
 
   const handleSubmit = async (query: string, language?: string) => {
+    if (lastQuery && (snippet || error)) {
+      setHistory(h => [...h, { query: lastQuery, snippet, error }]);
+    }
     setLoading(true);
     setError(null);
     setNotice(null);
@@ -77,6 +81,9 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
 
   return (
     <Box flexDirection="column" padding={1}>
+      {history.map((item, i) => (
+        <SnippetView key={i} snippet={item.snippet} loading={false} error={item.error} query={item.query} />
+      ))}
       <SnippetView snippet={snippet} loading={loading} error={error} query={lastQuery} />
       {notice && <Text dimColor>{notice}</Text>}
       <InputBar
