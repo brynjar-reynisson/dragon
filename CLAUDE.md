@@ -36,9 +36,10 @@ Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for ter
 
 ### Model layer (`src/models/`)
 
-- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`; `ModelProvider` includes `'anthropic' | 'openai' | 'ollama'`
-- `registry.ts` — `createModel(info: ModelInfo): BaseChatModel`; switches on `info.provider` to construct `ChatAnthropic`, `ChatOpenAI`, or `ChatOllama`; throws for missing API keys or unrecognised provider
-- `ollama.ts` — `fetchOllamaModels(): Promise<ModelInfo[]>`; calls `GET http://localhost:11434/api/tags` (2 s timeout), groups by model family (base name before `:`), keeps newest `modified_at` per family; returns `[]` on any error
+- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`
+- `registry.ts` — `createModel(info: ModelInfo): BaseChatModel`; switches on `provider`; constructs `ChatAnthropic`, `ChatOpenAI`, or `ChatOllama`; throws for unknown provider or missing API key
+- `ollama.ts` — `fetchOllamaModels()`: hits `GET http://localhost:11434/api/tags` (2 s timeout); deduplicates to one model per base name (newest `modified_at`); returns `[]` on any error
+- `persistence.ts` — `loadSavedModel(): string | null`; `saveModel(id: string): void`; state file at `~/.dragon/state.json`; errors silently swallowed
 
 ### Agent (`src/agent/Agent.ts`)
 
@@ -46,7 +47,7 @@ Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it
 
 ### UI (`src/ui/`)
 
-- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `selectedModel`, `models`); `handleModelChange` resolves `ModelInfo` and calls `agent.setModel(info)`; fetches Ollama models on mount and merges into `models`; renders `InputBar` above `SnippetView`
+- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `notice`, `selectedModel`); `savedModelId` prop drives deferred Ollama validation (silently switches if found, sets `notice` if not); `handleModelChange` calls `agent.setModel()`, `saveModel()`, and clears notice; renders `SnippetView`, optional dim notice line, then `InputBar`
 - `InputBar.tsx` — three modes: `default` (normal query), `editingLang` (`Ctrl+L`), `selectingModel` (triggered by typing `/model`). Shows `[model-id]` badge pinned right. Model picker shows arrow-key list; `Space` switches to free-text model entry; `Esc` cancels.
 - `SnippetView.tsx` — displays snippet via `cli-highlight`; shows spinner while loading; one-line red error on failure; usage hint on empty state
 
