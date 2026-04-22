@@ -36,12 +36,13 @@ Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for ter
 
 ### Model layer (`src/models/`)
 
-- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`
-- `registry.ts` — `createModel(id): BaseChatModel`; constructs `ChatAnthropic` or `ChatOpenAI` from env API keys; throws immediately for unknown IDs or missing keys
+- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`; `ModelProvider` includes `'anthropic' | 'openai' | 'ollama'`
+- `registry.ts` — `createModel(info: ModelInfo): BaseChatModel`; switches on `info.provider` to construct `ChatAnthropic`, `ChatOpenAI`, or `ChatOllama`; throws for missing API keys
+- `ollama.ts` — `fetchOllamaModels(): Promise<ModelInfo[]>`; calls `GET http://localhost:11434/api/tags` (2 s timeout), groups by model family (base name before `:`), keeps newest `modified_at` per family; returns `[]` on any error
 
 ### Agent (`src/agent/Agent.ts`)
 
-Owns a `BaseChatModel` instance. Constructor takes `initialModelId` and calls `createModel()`. Exposes `setModel(id)` for runtime switching and `suggest(query, language?)` which builds `[SystemMessage, HumanMessage]` and calls `model.invoke()`.
+Owns a `BaseChatModel` instance. Constructor takes `initialModelId` and calls `createModel()`. Exposes `setModel(id)` for runtime switching and `suggest(query, language?)` which builds `[SystemMessage, HumanMessage]` and calls `model.invoke()`. Constructor resolves `ModelInfo` from `MODELS` and throws for unknown startup model IDs.
 
 ### UI (`src/ui/`)
 
