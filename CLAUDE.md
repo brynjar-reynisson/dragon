@@ -46,7 +46,7 @@ Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it
 
 ### UI (`src/ui/`)
 
-- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `language`, `selectedModel`, `models`); `handleModelChange` resolves `ModelInfo` and calls `agent.setModel(info)`; fetches Ollama models on mount and merges into `models`; renders `InputBar` above `SnippetView`
+- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `selectedModel`, `models`); `handleModelChange` resolves `ModelInfo` and calls `agent.setModel(info)`; fetches Ollama models on mount and merges into `models`; renders `InputBar` above `SnippetView`
 - `InputBar.tsx` — three modes: `default` (normal query), `editingLang` (`Ctrl+L`), `selectingModel` (triggered by typing `/model`). Shows `[model-id]` badge pinned right. Model picker shows arrow-key list; `Space` switches to free-text model entry; `Esc` cancels.
 - `SnippetView.tsx` — displays snippet via `cli-highlight`; shows spinner while loading; one-line red error on failure; usage hint on empty state
 
