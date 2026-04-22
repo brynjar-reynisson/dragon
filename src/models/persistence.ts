@@ -22,7 +22,7 @@ export function loadSavedModel(): string | null {
 export function saveModel(id: string): void {
   try {
     mkdirSync(STATE_DIR, { recursive: true });
-    writeFileSync(STATE_FILE, JSON.stringify({ model: id }));
+    writeFileSync(STATE_FILE, JSON.stringify({ model: id }), 'utf8');
   } catch {
     // persistence failure must not crash the app
   }
