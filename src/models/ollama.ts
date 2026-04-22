@@ -12,6 +12,7 @@ export async function fetchOllamaModels(): Promise<ModelInfo[]> {
     });
     if (!response.ok) return [];
     const data = await response.json() as { models: OllamaModel[] };
+    if (!Array.isArray(data.models)) return [];
 
     const groups = new Map<string, OllamaModel>();
     for (const model of data.models) {

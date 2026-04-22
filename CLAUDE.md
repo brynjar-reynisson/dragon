@@ -24,7 +24,7 @@ Copy `.env.example` to `.env` and fill in the required API key for your chosen p
 
 | Env var | Values | Default |
 |---|---|---|
-| `DRAGON_MODEL` | any model ID from `src/models/list.ts` | `claude-sonnet-4-6` |
+| `DRAGON_MODEL` | static model ID from `src/models/list.ts` only (Ollama models are selected at runtime via `/model`) | `claude-sonnet-4-6` |
 | `ANTHROPIC_API_KEY` | string | required for Claude models |
 | `OPENAI_API_KEY` | string | required for OpenAI models |
 

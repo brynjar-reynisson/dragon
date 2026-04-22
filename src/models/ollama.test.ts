@@ -27,6 +27,13 @@ describe('fetchOllamaModels', () => {
     expect(await fetchOllamaModels()).toEqual([]);
   });
 
+  it('returns empty array when response has no models field', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 200 }),
+    );
+    expect(await fetchOllamaModels()).toEqual([]);
+  });
+
   it('keeps the model with the most recent modified_at per family', async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(
