@@ -7,14 +7,18 @@ interface Props {
   snippet: string;
   loading: boolean;
   error: string | null;
+  query: string;
 }
 
-export function SnippetView({ snippet, loading, error }: Props) {
+export function SnippetView({ snippet, loading, error, query }: Props) {
   if (loading) {
     return (
-      <Box gap={1}>
-        <Text color="yellow"><Spinner type="dots" /></Text>
-        <Text>Generating snippet...</Text>
+      <Box flexDirection="column">
+        {query && <Text dimColor>&gt; {query}</Text>}
+        <Box gap={1}>
+          <Text color="yellow"><Spinner type="dots" /></Text>
+          <Text>Generating snippet...</Text>
+        </Box>
       </Box>
     );
   }
@@ -36,8 +40,11 @@ export function SnippetView({ snippet, loading, error }: Props) {
     highlighted = snippet;
   }
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
-      <Text>{highlighted}</Text>
+    <Box flexDirection="column">
+      {query && <Text dimColor>&gt; {query}</Text>}
+      <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
+        <Text>{highlighted}</Text>
+      </Box>
     </Box>
   );
 }

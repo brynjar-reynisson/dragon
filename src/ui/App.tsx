@@ -18,6 +18,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
   const [snippet, setSnippet] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastQuery, setLastQuery] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(initialModelId);
   const [models, setModels] = useState<ModelInfo[]>(availableModels());
@@ -50,6 +51,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
     setError(null);
     setNotice(null);
     setSnippet('');
+    setLastQuery(query);
     try {
       const result = await agent.suggest(query, language);
       setSnippet(result);
@@ -75,7 +77,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <SnippetView snippet={snippet} loading={loading} error={error} />
+      <SnippetView snippet={snippet} loading={loading} error={error} query={lastQuery} />
       {notice && <Text dimColor>{notice}</Text>}
       <InputBar
         disabled={loading}
