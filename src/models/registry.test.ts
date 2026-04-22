@@ -2,25 +2,31 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatOllama } from '@langchain/ollama';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { createModel } from './registry.js';
 
 vi.mock('@langchain/anthropic', () => ({ ChatAnthropic: vi.fn() }));
 vi.mock('@langchain/openai', () => ({ ChatOpenAI: vi.fn() }));
 vi.mock('@langchain/ollama', () => ({ ChatOllama: vi.fn() }));
+vi.mock('@langchain/google-genai', () => ({ ChatGoogleGenerativeAI: vi.fn() }));
 
 describe('createModel', () => {
   let savedAnt: string | undefined;
   let savedOai: string | undefined;
+  let savedGoog: string | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
     savedAnt = process.env['ANTHROPIC_API_KEY'];
     savedOai = process.env['OPENAI_API_KEY'];
+    savedGoog = process.env['GOOGLE_API_KEY'];
     process.env['ANTHROPIC_API_KEY'] = 'test-ant';
     process.env['OPENAI_API_KEY'] = 'test-oai';
+    process.env['GOOGLE_API_KEY'] = 'test-goog';
     vi.mocked(ChatAnthropic).mockImplementation(() => ({}) as any);
     vi.mocked(ChatOpenAI).mockImplementation(() => ({}) as any);
     vi.mocked(ChatOllama).mockImplementation(() => ({}) as any);
+    vi.mocked(ChatGoogleGenerativeAI).mockImplementation(() => ({}) as any);
   });
 
   afterEach(() => {
@@ -28,6 +34,8 @@ describe('createModel', () => {
     else delete process.env['ANTHROPIC_API_KEY'];
     if (savedOai !== undefined) process.env['OPENAI_API_KEY'] = savedOai;
     else delete process.env['OPENAI_API_KEY'];
+    if (savedGoog !== undefined) process.env['GOOGLE_API_KEY'] = savedGoog;
+    else delete process.env['GOOGLE_API_KEY'];
   });
 
   it('constructs ChatAnthropic for an anthropic model', () => {
@@ -63,5 +71,15 @@ describe('createModel', () => {
   it('throws when OPENAI_API_KEY is missing', () => {
     delete process.env['OPENAI_API_KEY'];
     expect(() => createModel({ id: 'gpt-4o', provider: 'openai' })).toThrow('OPENAI_API_KEY');
+  });
+
+  it('constructs ChatGoogleGenerativeAI for a google model', () => {
+    createModel({ id: 'gemini-2.5-pro', provider: 'google' });
+    expect(ChatGoogleGenerativeAI).toHaveBeenCalledWith({ model: 'gemini-2.5-pro', apiKey: 'test-goog' });
+  });
+
+  it('throws when GOOGLE_API_KEY is missing', () => {
+    delete process.env['GOOGLE_API_KEY'];
+    expect(() => createModel({ id: 'gemini-2.5-pro', provider: 'google' })).toThrow('GOOGLE_API_KEY');
   });
 });

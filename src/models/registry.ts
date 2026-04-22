@@ -1,6 +1,7 @@
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatOllama } from '@langchain/ollama';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import type { ModelInfo } from './list.js';
 
@@ -17,6 +18,11 @@ export function createModel(info: ModelInfo): BaseChatModel {
   }
   if (info.provider === 'ollama') {
     return new ChatOllama({ model: info.id });
+  }
+  if (info.provider === 'google') {
+    const apiKey = process.env['GOOGLE_API_KEY'];
+    if (!apiKey) throw new Error('GOOGLE_API_KEY is required for Google models.');
+    return new ChatGoogleGenerativeAI({ model: info.id, apiKey });
   }
   const _exhaustive: never = info.provider;
   throw new Error(`Unsupported provider: ${_exhaustive}`);
