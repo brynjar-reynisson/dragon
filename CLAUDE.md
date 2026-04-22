@@ -27,6 +27,7 @@ Copy `.env.example` to `.env` and fill in the required API key for your chosen p
 | `DRAGON_MODEL` | static model ID from `src/models/list.ts` only (Ollama models are selected at runtime via `/model`) | `claude-sonnet-4-6` |
 | `ANTHROPIC_API_KEY` | string | required for Claude models |
 | `OPENAI_API_KEY` | string | required for OpenAI models |
+| `GOOGLE_API_KEY` | string | required for Google models |
 
 ## Architecture
 
@@ -36,10 +37,11 @@ Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for ter
 
 ### Model layer (`src/models/`)
 
-- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`
-- `registry.ts` — `createModel(info: ModelInfo): BaseChatModel`; switches on `provider`; constructs `ChatAnthropic`, `ChatOpenAI`, or `ChatOllama`; throws for unknown provider or missing API key
+- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`; `ModelProvider` includes `'anthropic' | 'openai' | 'ollama' | 'google'`
+- `registry.ts` — `createModel(info: ModelInfo): BaseChatModel`; switches on `provider`; constructs `ChatAnthropic`, `ChatOpenAI`, `ChatOllama`, or `ChatGoogleGenerativeAI`; throws for unknown provider or missing API key (safety net — not reachable through normal UI flow)
 - `ollama.ts` — `fetchOllamaModels()`: hits `GET http://localhost:11434/api/tags` (2 s timeout); deduplicates to one model per base name (newest `modified_at`); returns `[]` on any error
 - `persistence.ts` — `loadSavedModel(): string | null`; `saveModel(id: string): void`; state file at `~/.dragon/state.json`; errors silently swallowed
+- `availability.ts` — `availableModels(): ModelInfo[]` filters `MODELS` to providers with a non-empty API key; `unavailableProviderMessages(): string[]` returns one dim message per missing cloud provider
 
 ### Agent (`src/agent/Agent.ts`)
 
@@ -47,8 +49,8 @@ Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it
 
 ### UI (`src/ui/`)
 
-- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `notice`, `selectedModel`); `savedModelId` prop drives deferred Ollama validation (silently switches if found, sets `notice` if not); `handleModelChange` calls `agent.setModel()`, `saveModel()`, and clears notice; renders `SnippetView`, optional dim notice line, then `InputBar`
-- `InputBar.tsx` — three modes: `default` (normal query), `editingLang` (`Ctrl+L`), `selectingModel` (triggered by typing `/model`). Shows `[model-id]` badge pinned right. Model picker shows arrow-key list; `Space` switches to free-text model entry; `Esc` cancels.
+- `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `notice`, `selectedModel`); uses `availableModels()` for initial models state; `savedModelId` prop drives deferred Ollama validation (silently switches if found, sets `notice` if not); `handleModelChange` calls `agent.setModel()`, `saveModel()`, and clears notice; renders `SnippetView`, optional dim notice line, then `InputBar`
+- `InputBar.tsx` — three modes: `default` (normal query), `editingLang` (`Ctrl+L`), `selectingModel` (triggered by typing `/model`). Shows `[model-id]` badge pinned right. Model picker shows arrow-key list followed by dim `unavailableNotices` lines; `Space` switches to free-text model entry; `Esc` cancels.
 - `SnippetView.tsx` — displays snippet via `cli-highlight`; shows spinner while loading; one-line red error on failure; usage hint on empty state
 
 ### Key bindings
