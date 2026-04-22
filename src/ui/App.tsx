@@ -37,13 +37,12 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
         if (found) {
           agent.setModel(found);
           setSelectedModel(savedModelId);
-          saveModel(savedModelId);
         } else {
           setNotice(`Previously selected model "${savedModelId}" is not available.`);
         }
       }
     });
-  }, []);
+  }, [savedModelId, initialModelId, agent]);
 
   const handleSubmit = async (query: string, language?: string) => {
     setLoading(true);
