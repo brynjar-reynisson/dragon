@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import Spinner from 'ink-spinner';
 import { highlight } from 'cli-highlight';
+
+function formatElapsed(s: number): string {
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}m ${s % 60}s`;
+}
 
 interface Props {
   snippet: string;
@@ -11,13 +16,22 @@ interface Props {
 }
 
 export function SnippetView({ snippet, loading, error, query }: Props) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!loading) { setElapsed(0); return; }
+    setElapsed(0);
+    const id = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [loading]);
+
   if (loading) {
     return (
       <Box flexDirection="column">
         {query && <Text dimColor>&gt; {query}</Text>}
         <Box gap={1}>
           <Text color="yellow"><Spinner type="dots" /></Text>
-          <Text>Generating snippet...</Text>
+          <Text>Generating snippet... ({formatElapsed(elapsed)})</Text>
         </Box>
       </Box>
     );

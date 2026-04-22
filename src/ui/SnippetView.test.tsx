@@ -11,11 +11,12 @@ describe('SnippetView', () => {
     expect(lastFrame()).toContain('Type a request');
   });
 
-  it('shows "Generating" text while loading', () => {
+  it('shows "Generating" text with elapsed time while loading', () => {
     const { lastFrame } = render(
       <SnippetView snippet="" loading={true} error={null} query="" />
     );
     expect(lastFrame()).toContain('Generating');
+    expect(lastFrame()).toContain('0s');
   });
 
   it('shows query above spinner while loading', () => {
