@@ -12,6 +12,18 @@ vi.mock('../models/persistence.js', () => ({
   saveModel: vi.fn(),
 }));
 
+vi.mock('../models/availability.js', () => ({
+  availableModels: vi.fn().mockReturnValue([
+    { id: 'claude-sonnet-4-6', provider: 'anthropic' },
+    { id: 'claude-haiku-4-5-20251001', provider: 'anthropic' },
+    { id: 'gpt-4o', provider: 'openai' },
+    { id: 'gpt-4o-mini', provider: 'openai' },
+    { id: 'gemini-2.5-pro', provider: 'google' },
+    { id: 'gemini-2.5-flash', provider: 'google' },
+  ]),
+  unavailableProviderMessages: vi.fn().mockReturnValue([]),
+}));
+
 describe('App', () => {
   let agent: Agent;
 
@@ -132,5 +144,17 @@ describe('App', () => {
     stdin.write('\r');
     await new Promise(r => setTimeout(r, 50));
     expect(lastFrame()).not.toContain('Previously selected model');
+  });
+
+  it('passes unavailable provider notices to InputBar', async () => {
+    const { unavailableProviderMessages } = await import('../models/availability.js');
+    vi.mocked(unavailableProviderMessages).mockReturnValueOnce([
+      'Google models are not available without GOOGLE_API_KEY',
+    ]);
+    const { lastFrame, stdin } = render(
+      <App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />
+    );
+    stdin.write('/model');
+    expect(lastFrame()).toContain('Google models are not available without GOOGLE_API_KEY');
   });
 });

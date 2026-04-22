@@ -3,9 +3,10 @@ import { Box, Text, useStdin } from 'ink';
 import { InputBar } from './InputBar.js';
 import { SnippetView } from './SnippetView.js';
 import type { Agent } from '../agent/Agent.js';
-import { MODELS, type ModelInfo } from '../models/list.js';
+import { type ModelInfo } from '../models/list.js';
 import { fetchOllamaModels } from '../models/ollama.js';
 import { saveModel } from '../models/persistence.js';
+import { availableModels, unavailableProviderMessages } from '../models/availability.js';
 
 interface Props {
   agent: Agent;
@@ -19,7 +20,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(initialModelId);
-  const [models, setModels] = useState<ModelInfo[]>(MODELS);
+  const [models, setModels] = useState<ModelInfo[]>(availableModels());
   const { setRawMode } = useStdin();
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
 
   useEffect(() => {
     fetchOllamaModels().then(ollamaModels => {
-      const merged = ollamaModels.length > 0 ? [...MODELS, ...ollamaModels] : MODELS;
+      const merged = ollamaModels.length > 0 ? [...availableModels(), ...ollamaModels] : availableModels();
       if (ollamaModels.length > 0) setModels(merged);
 
       if (savedModelId !== null && savedModelId !== initialModelId) {
@@ -80,6 +81,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
         disabled={loading}
         selectedModel={selectedModel}
         models={models}
+        unavailableNotices={unavailableProviderMessages()}
         onSubmit={handleSubmit}
         onModelChange={handleModelChange}
       />
