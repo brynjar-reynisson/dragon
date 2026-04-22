@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { join } from 'path';
 
 vi.mock('os', () => ({ homedir: vi.fn().mockReturnValue('/home/user') }));
 vi.mock('fs', () => ({
@@ -53,12 +54,12 @@ describe('saveModel', () => {
     const { writeFileSync, mkdirSync } = await import('fs');
     const { saveModel } = await import('./persistence.js');
     saveModel('llama3.2');
-    expect(mkdirSync).toHaveBeenCalled();
-    expect(mkdirSync.mock.calls[0][1]).toEqual({ recursive: true });
-    expect(writeFileSync).toHaveBeenCalled();
-    const writeCall = writeFileSync.mock.calls[0];
-    expect(writeCall[1]).toBe(JSON.stringify({ model: 'llama3.2' }));
-    expect(writeCall[0]).toMatch(/\.dragon[/\\]state\.json$/);
+    expect(mkdirSync).toHaveBeenCalledWith(join('/home/user', '.dragon'), { recursive: true });
+    expect(writeFileSync).toHaveBeenCalledWith(
+      join('/home/user', '.dragon', 'state.json'),
+      JSON.stringify({ model: 'llama3.2' }),
+      'utf8'
+    );
   });
 
   it('swallows errors silently', async () => {
