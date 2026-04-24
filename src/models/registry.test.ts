@@ -3,30 +3,36 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatOllama } from '@langchain/ollama';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { ChatDeepSeek } from '@langchain/deepseek';
 import { createModel } from './registry.js';
 
 vi.mock('@langchain/anthropic', () => ({ ChatAnthropic: vi.fn() }));
 vi.mock('@langchain/openai', () => ({ ChatOpenAI: vi.fn() }));
 vi.mock('@langchain/ollama', () => ({ ChatOllama: vi.fn() }));
 vi.mock('@langchain/google-genai', () => ({ ChatGoogleGenerativeAI: vi.fn() }));
+vi.mock('@langchain/deepseek', () => ({ ChatDeepSeek: vi.fn() }));
 
 describe('createModel', () => {
   let savedAnt: string | undefined;
   let savedOai: string | undefined;
   let savedGoog: string | undefined;
+  let savedDs: string | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
     savedAnt = process.env['ANTHROPIC_API_KEY'];
     savedOai = process.env['OPENAI_API_KEY'];
     savedGoog = process.env['GOOGLE_API_KEY'];
+    savedDs = process.env['DEEPSEEK_API_KEY'];
     process.env['ANTHROPIC_API_KEY'] = 'test-ant';
     process.env['OPENAI_API_KEY'] = 'test-oai';
     process.env['GOOGLE_API_KEY'] = 'test-goog';
+    process.env['DEEPSEEK_API_KEY'] = 'test-ds';
     vi.mocked(ChatAnthropic).mockImplementation(() => ({}) as any);
     vi.mocked(ChatOpenAI).mockImplementation(() => ({}) as any);
     vi.mocked(ChatOllama).mockImplementation(() => ({}) as any);
     vi.mocked(ChatGoogleGenerativeAI).mockImplementation(() => ({}) as any);
+    vi.mocked(ChatDeepSeek).mockImplementation(() => ({}) as any);
   });
 
   afterEach(() => {
@@ -36,6 +42,8 @@ describe('createModel', () => {
     else delete process.env['OPENAI_API_KEY'];
     if (savedGoog !== undefined) process.env['GOOGLE_API_KEY'] = savedGoog;
     else delete process.env['GOOGLE_API_KEY'];
+    if (savedDs !== undefined) process.env['DEEPSEEK_API_KEY'] = savedDs;
+    else delete process.env['DEEPSEEK_API_KEY'];
   });
 
   it('constructs ChatAnthropic for an anthropic model', () => {
@@ -81,5 +89,15 @@ describe('createModel', () => {
   it('throws when GOOGLE_API_KEY is missing', () => {
     delete process.env['GOOGLE_API_KEY'];
     expect(() => createModel({ id: 'gemini-2.5-pro', provider: 'google' })).toThrow('GOOGLE_API_KEY');
+  });
+
+  it('constructs ChatDeepSeek for a deepseek model', () => {
+    createModel({ id: 'deepseek-chat', provider: 'deepseek' });
+    expect(ChatDeepSeek).toHaveBeenCalledWith({ model: 'deepseek-chat', apiKey: 'test-ds' });
+  });
+
+  it('throws when DEEPSEEK_API_KEY is missing', () => {
+    delete process.env['DEEPSEEK_API_KEY'];
+    expect(() => createModel({ id: 'deepseek-chat', provider: 'deepseek' })).toThrow('DEEPSEEK_API_KEY');
   });
 });

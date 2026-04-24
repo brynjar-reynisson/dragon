@@ -5,14 +5,17 @@ describe('availableModels', () => {
   let savedAnt: string | undefined;
   let savedOai: string | undefined;
   let savedGoog: string | undefined;
+  let savedDs: string | undefined;
 
   beforeEach(() => {
     savedAnt = process.env['ANTHROPIC_API_KEY'];
     savedOai = process.env['OPENAI_API_KEY'];
     savedGoog = process.env['GOOGLE_API_KEY'];
+    savedDs = process.env['DEEPSEEK_API_KEY'];
     process.env['ANTHROPIC_API_KEY'] = 'test-ant';
     process.env['OPENAI_API_KEY'] = 'test-oai';
     process.env['GOOGLE_API_KEY'] = 'test-goog';
+    process.env['DEEPSEEK_API_KEY'] = 'test-ds';
   });
 
   afterEach(() => {
@@ -22,6 +25,8 @@ describe('availableModels', () => {
     else delete process.env['OPENAI_API_KEY'];
     if (savedGoog !== undefined) process.env['GOOGLE_API_KEY'] = savedGoog;
     else delete process.env['GOOGLE_API_KEY'];
+    if (savedDs !== undefined) process.env['DEEPSEEK_API_KEY'] = savedDs;
+    else delete process.env['DEEPSEEK_API_KEY'];
   });
 
   it('returns all models when all keys are present', () => {
@@ -29,6 +34,7 @@ describe('availableModels', () => {
     expect(models.some(m => m.provider === 'anthropic')).toBe(true);
     expect(models.some(m => m.provider === 'openai')).toBe(true);
     expect(models.some(m => m.provider === 'google')).toBe(true);
+    expect(models.some(m => m.provider === 'deepseek')).toBe(true);
   });
 
   it('excludes google models when GOOGLE_API_KEY is absent', () => {
@@ -52,10 +58,18 @@ describe('availableModels', () => {
     expect(models.some(m => m.provider === 'google')).toBe(false);
   });
 
+  it('excludes deepseek models when DEEPSEEK_API_KEY is absent', () => {
+    delete process.env['DEEPSEEK_API_KEY'];
+    const models = availableModels();
+    expect(models.some(m => m.provider === 'deepseek')).toBe(false);
+    expect(models.some(m => m.provider === 'anthropic')).toBe(true);
+  });
+
   it('returns empty array when all cloud keys are absent', () => {
     delete process.env['ANTHROPIC_API_KEY'];
     delete process.env['OPENAI_API_KEY'];
     delete process.env['GOOGLE_API_KEY'];
+    delete process.env['DEEPSEEK_API_KEY'];
     expect(availableModels()).toHaveLength(0);
   });
 });
@@ -64,14 +78,17 @@ describe('unavailableProviderMessages', () => {
   let savedAnt: string | undefined;
   let savedOai: string | undefined;
   let savedGoog: string | undefined;
+  let savedDs: string | undefined;
 
   beforeEach(() => {
     savedAnt = process.env['ANTHROPIC_API_KEY'];
     savedOai = process.env['OPENAI_API_KEY'];
     savedGoog = process.env['GOOGLE_API_KEY'];
+    savedDs = process.env['DEEPSEEK_API_KEY'];
     process.env['ANTHROPIC_API_KEY'] = 'test-ant';
     process.env['OPENAI_API_KEY'] = 'test-oai';
     process.env['GOOGLE_API_KEY'] = 'test-goog';
+    process.env['DEEPSEEK_API_KEY'] = 'test-ds';
   });
 
   afterEach(() => {
@@ -81,6 +98,8 @@ describe('unavailableProviderMessages', () => {
     else delete process.env['OPENAI_API_KEY'];
     if (savedGoog !== undefined) process.env['GOOGLE_API_KEY'] = savedGoog;
     else delete process.env['GOOGLE_API_KEY'];
+    if (savedDs !== undefined) process.env['DEEPSEEK_API_KEY'] = savedDs;
+    else delete process.env['DEEPSEEK_API_KEY'];
   });
 
   it('returns empty array when all keys are present', () => {
@@ -103,15 +122,25 @@ describe('unavailableProviderMessages', () => {
     expect(msgs[0]).toContain('OPENAI_API_KEY');
   });
 
-  it('returns three messages when all cloud keys are missing', () => {
+  it('returns one message when DEEPSEEK_API_KEY is missing', () => {
+    delete process.env['DEEPSEEK_API_KEY'];
+    const msgs = unavailableProviderMessages();
+    expect(msgs).toHaveLength(1);
+    expect(msgs[0]).toContain('DeepSeek');
+    expect(msgs[0]).toContain('DEEPSEEK_API_KEY');
+  });
+
+  it('returns four messages when all cloud keys are missing', () => {
     delete process.env['ANTHROPIC_API_KEY'];
     delete process.env['OPENAI_API_KEY'];
     delete process.env['GOOGLE_API_KEY'];
+    delete process.env['DEEPSEEK_API_KEY'];
     const msgs = unavailableProviderMessages();
-    expect(msgs).toHaveLength(3);
+    expect(msgs).toHaveLength(4);
     expect(msgs.some(m => m.includes('Anthropic'))).toBe(true);
     expect(msgs.some(m => m.includes('OpenAI'))).toBe(true);
     expect(msgs.some(m => m.includes('Google'))).toBe(true);
+    expect(msgs.some(m => m.includes('DeepSeek'))).toBe(true);
   });
 
   it('treats empty string key as missing', () => {

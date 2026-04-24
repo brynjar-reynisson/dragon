@@ -20,6 +20,8 @@ vi.mock('../models/availability.js', () => ({
     { id: 'gpt-4o-mini', provider: 'openai' },
     { id: 'gemini-2.5-pro', provider: 'google' },
     { id: 'gemini-2.5-flash', provider: 'google' },
+    { id: 'deepseek-chat', provider: 'deepseek' },
+    { id: 'deepseek-reasoner', provider: 'deepseek' },
   ]),
   unavailableProviderMessages: vi.fn().mockReturnValue([]),
 }));

@@ -28,6 +28,7 @@ Copy `.env.example` to `.env` and fill in the required API key for your chosen p
 | `ANTHROPIC_API_KEY` | string | required for Claude models |
 | `OPENAI_API_KEY` | string | required for OpenAI models |
 | `GOOGLE_API_KEY` | string | required for Google models |
+| `DEEPSEEK_API_KEY` | string | required for DeepSeek models |
 
 ## Architecture
 
@@ -37,8 +38,8 @@ Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for ter
 
 ### Model layer (`src/models/`)
 
-- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`; `ModelProvider` includes `'anthropic' | 'openai' | 'ollama' | 'google'`
-- `registry.ts` — `createModel(info: ModelInfo): BaseChatModel`; switches on `provider`; constructs `ChatAnthropic`, `ChatOpenAI`, `ChatOllama`, or `ChatGoogleGenerativeAI`; throws for unknown provider or missing API key (safety net — not reachable through normal UI flow)
+- `list.ts` — `MODELS` array of `{ id, provider }` and `DEFAULT_MODEL_ID`; `ModelProvider` includes `'anthropic' | 'openai' | 'ollama' | 'google' | 'deepseek'`
+- `registry.ts` — `createModel(info: ModelInfo): BaseChatModel`; switches on `provider`; constructs `ChatAnthropic`, `ChatOpenAI`, `ChatOllama`, `ChatGoogleGenerativeAI`, or `ChatDeepSeek`; throws for unknown provider or missing API key (safety net — not reachable through normal UI flow)
 - `ollama.ts` — `fetchOllamaModels()`: hits `GET http://localhost:11434/api/tags` (2 s timeout); deduplicates to one model per base name (newest `modified_at`); returns `[]` on any error
 - `persistence.ts` — `loadSavedModel(): string | null`; `saveModel(id: string): void`; state file at `~/.dragon/state.json`; errors silently swallowed
 - `availability.ts` — `availableModels(): ModelInfo[]` filters `MODELS` to providers with a non-empty API key; `unavailableProviderMessages(): string[]` returns one dim message per missing cloud provider

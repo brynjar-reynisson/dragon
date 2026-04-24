@@ -1,4 +1,4 @@
-export type ModelProvider = 'anthropic' | 'openai' | 'ollama' | 'google';
+export type ModelProvider = 'anthropic' | 'openai' | 'ollama' | 'google' | 'deepseek';
 
 export interface ModelInfo {
   id: string;
@@ -12,6 +12,8 @@ export const MODELS: ModelInfo[] = [
   { id: 'gpt-4o-mini', provider: 'openai' },
   { id: 'gemini-2.5-pro', provider: 'google' },
   { id: 'gemini-2.5-flash', provider: 'google' },
+  { id: 'deepseek-chat', provider: 'deepseek' },
+  { id: 'deepseek-reasoner', provider: 'deepseek' },
 ];
 
 export const DEFAULT_MODEL_ID = 'claude-sonnet-4-6';

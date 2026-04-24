@@ -4,12 +4,14 @@ const PROVIDER_ENV: Partial<Record<ModelProvider, string>> = {
   anthropic: 'ANTHROPIC_API_KEY',
   openai: 'OPENAI_API_KEY',
   google: 'GOOGLE_API_KEY',
+  deepseek: 'DEEPSEEK_API_KEY',
 };
 
 const PROVIDER_DISPLAY: Partial<Record<ModelProvider, string>> = {
   anthropic: 'Anthropic',
   openai: 'OpenAI',
   google: 'Google',
+  deepseek: 'DeepSeek',
 };
 
 function hasKey(provider: ModelProvider): boolean {
