@@ -92,12 +92,12 @@ describe('createModel', () => {
   });
 
   it('constructs ChatDeepSeek for a deepseek model', () => {
-    createModel({ id: 'deepseek-chat', provider: 'deepseek' });
-    expect(ChatDeepSeek).toHaveBeenCalledWith({ model: 'deepseek-chat', apiKey: 'test-ds' });
+    createModel({ id: 'deepseek-v4-pro', provider: 'deepseek' });
+    expect(ChatDeepSeek).toHaveBeenCalledWith({ model: 'deepseek-v4-pro', apiKey: 'test-ds' });
   });
 
   it('throws when DEEPSEEK_API_KEY is missing', () => {
     delete process.env['DEEPSEEK_API_KEY'];
-    expect(() => createModel({ id: 'deepseek-chat', provider: 'deepseek' })).toThrow('DEEPSEEK_API_KEY');
+    expect(() => createModel({ id: 'deepseek-v4-pro', provider: 'deepseek' })).toThrow('DEEPSEEK_API_KEY');
   });
 });
