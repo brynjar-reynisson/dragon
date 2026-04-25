@@ -4,12 +4,12 @@ import { platform } from 'node:os';
 export type ShellType = 'platform' | 'powershell';
 
 export function executeCommand(command: string, shell: ShellType): Promise<string> {
-  const shellOpt = shell === 'powershell'
-    ? (platform() === 'win32' ? 'powershell.exe' : 'pwsh')
-    : true;
+  const opts = shell === 'powershell'
+    ? { shell: platform() === 'win32' ? 'powershell.exe' : 'pwsh' }
+    : {};
 
   return new Promise(resolve => {
-    exec(command, { shell: shellOpt }, (_error, stdout, stderr) => {
+    exec(command, opts, (_error, stdout, stderr) => {
       const out = [stdout, stderr].map(s => s.trim()).filter(Boolean).join('\n');
       resolve(out || (_error ? _error.message : '(no output)'));
     });

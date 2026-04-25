@@ -41,14 +41,11 @@ describe('executeCommand', () => {
     expect(await executeCommand('noop', 'platform')).toBe('(no output)');
   });
 
-  it('passes shell: true for platform shell', async () => {
+  it('passes no shell option for platform shell (uses system default)', async () => {
     mockExec('ok', '');
     await executeCommand('echo ok', 'platform');
-    expect(vi.mocked(exec)).toHaveBeenCalledWith(
-      'echo ok',
-      expect.objectContaining({ shell: true }),
-      expect.any(Function),
-    );
+    const opts = vi.mocked(exec).mock.calls[0][1] as any;
+    expect(opts.shell).toBeUndefined();
   });
 
   it('passes powershell.exe or pwsh for powershell shell', async () => {
