@@ -61,9 +61,11 @@ export function SnippetView({ snippet, loading, error, query, highlightSyntax = 
   return (
     <Box flexDirection="column">
       {query && <Text dimColor>&gt; {query}</Text>}
-      <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
+      <Text dimColor>{'─'.repeat(40)}</Text>
+      <Box flexDirection="column" paddingLeft={1}>
         <Text>{displayed}</Text>
       </Box>
+      <Text dimColor>{'─'.repeat(40)}</Text>
     </Box>
   );
 }
