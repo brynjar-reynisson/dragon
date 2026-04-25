@@ -61,7 +61,10 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
     const isPs = query.startsWith('!!');
     const isShell = !isPs && query.startsWith('!');
     try {
-      if (isPs || isShell) {
+      if (query === '/init') {
+        setHighlightSyntax(false);
+        setSnippet('Initialized');
+      } else if (isPs || isShell) {
         const cmd = query.slice(isPs ? 2 : 1).trim();
         const result = await executeCommand(cmd, isPs ? 'powershell' : 'platform');
         setHighlightSyntax(false);
@@ -105,7 +108,6 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
         unavailableNotices={unavailableProviderMessages()}
         onSubmit={handleSubmit}
         onModelChange={handleModelChange}
-        onInit={() => {}}
       />
     </Box>
   );

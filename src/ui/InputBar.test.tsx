@@ -12,7 +12,6 @@ function makeProps(overrides: Partial<Parameters<typeof InputBar>[0]> = {}) {
     unavailableNotices: [],
     onSubmit: vi.fn(),
     onModelChange: vi.fn(),
-    onInit: vi.fn(),
     ...overrides,
   };
 }
@@ -102,12 +101,12 @@ describe('InputBar', () => {
     expect(lastFrame()).toContain('llama3.2:latest');
   });
 
-  it('calls onInit and clears input when /init is typed', () => {
-    const onInit = vi.fn();
-    const { lastFrame, stdin } = render(<InputBar {...makeProps({ onInit })} />);
+  it('submits /init as a normal query on Enter', () => {
+    const onSubmit = vi.fn();
+    const { stdin } = render(<InputBar {...makeProps({ onSubmit })} />);
     stdin.write('/init');
-    expect(onInit).toHaveBeenCalledOnce();
-    expect(lastFrame()).not.toContain('/init');
+    stdin.write('\r');
+    expect(onSubmit).toHaveBeenCalledWith('/init');
   });
 
   it('shows unavailable provider notices below model list in picker', () => {

@@ -151,6 +151,15 @@ describe('App', () => {
     expect(lastFrame()).not.toContain('Previously selected model');
   });
 
+  it('shows Initialized when /init is submitted', async () => {
+    const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('/init');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(lastFrame()).toContain('Initialized');
+    expect(agent.suggest).not.toHaveBeenCalled();
+  });
+
   it('executes platform shell command when query starts with !', async () => {
     const { executeCommand } = await import('../execution.js');
     vi.mocked(executeCommand).mockResolvedValueOnce('hello');
