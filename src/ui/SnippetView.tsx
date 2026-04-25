@@ -14,9 +14,10 @@ interface Props {
   error: string | null;
   query: string;
   highlightSyntax?: boolean;
+  toolCalls?: string[];
 }
 
-export function SnippetView({ snippet, loading, error, query, highlightSyntax = true }: Props) {
+export function SnippetView({ snippet, loading, error, query, highlightSyntax = true, toolCalls = [] }: Props) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -32,8 +33,11 @@ export function SnippetView({ snippet, loading, error, query, highlightSyntax = 
         {query && <Text dimColor>&gt; {query}</Text>}
         <Box gap={1}>
           <Text color="yellow"><Spinner type="dots" /></Text>
-          <Text>Generating snippet... ({formatElapsed(elapsed)})</Text>
+          <Text>Generating... ({formatElapsed(elapsed)})</Text>
         </Box>
+        {toolCalls.map((tc, i) => (
+          <Text key={i} dimColor>  ↳ {tc}</Text>
+        ))}
       </Box>
     );
   }

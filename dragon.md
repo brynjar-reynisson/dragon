@@ -1,67 +1,194 @@
-# Dragon Coding Agent TUI
+# Dragon — Terminal UI Coding Agent
 
-A terminal-based AI coding agent that lets you interact with various LLMs (local Ollama, Google models) through a reactive TUI built with React and Ink. The project supports dynamic model registration, persistence, and pluggable tools for file system operations and reasoning tasks.
+**Dragon** is a terminal-based coding assistant that accepts natural-language requests and returns syntax-highlighted code snippets. It is built with **TypeScript** and **Ink** (React for terminals), and supports multiple AI backends through LangChain.
+
+---
 
 ## Purpose
 
-Provide a fast, offline-capable coding agent that runs entirely in the terminal. It enables developers to query and execute code-related tasks, switch between multiple LLM providers, and persist their model preferences—all without leaving the command line.
+- Accept plain-English coding requests in a terminal UI
+- Return raw, copy-paste-ready code snippets with syntax highlighting
+- Support model selection and switching at runtime (including local Ollama models)
+- Execute shell commands directly (prefix `!` for system shell, `!!` for PowerShell)
+- Optionally explore the project file tree before generating output (via tools)
+
+Scope is **snippet suggestions only** — no file editing, code execution of generated code, git operations, streaming, or persistent conversation history.
+
+---
 
 ## Directory Structure
 
 ```
-.claude/                     # Claude-specific configuration
-.superpowers/                # Brainstorming tool state (local dev tool)
-dist/                        # Compiled output
-docs/superpowers/            # Feature plans and design specs
-  plans/                     # Markdown plans for individual features
-  specs/                     # Detailed design documents
-src/
-  agent/                     # Core agent loop (Agent.ts)
-  models/                    # Model providers, registry, persistence
-  tool/                      # Pluggable tool implementations
-  ui/                        # Terminal UI components (App, InputBar, SnippetView)
-  index.tsx                  # Application entry point
-  execution.ts               # Tool execution pipeline
-  test-setup.ts              # Test environment configuration
-.gitignore
-.env.example
-CLAUDE.md                    # Project context for AI assistants
-package.json
-tsconfig.json
-vitest.config.ts
+dragon/
+├── .claude/                  # Claude Code configuration
+├── .env.example              # Environment variable template
+├── .gitignore
+├── .superpowers/             # Superpowers IDE integration state
+├── CLAUDE.md                 # Claude Code guidance file
+├── LICENSE
+├── README.md
+├── dragon.md                 # Auto-generated project description (from /init)
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+├── vitest.config.ts
+├── dist/                     # Compiled output (tsc)
+├── docs/superpowers/
+│   ├── plans/                # Feature planning documents
+│   └── specs/                # Design specification documents
+├── src/
+│   ├── index.tsx             # Entry point — env setup, model resolution, render
+│   ├── execution.ts          # Shell command execution (! and !! prefixes)
+│   ├── test-setup.ts         # Test helper wrapping Ink render in React act()
+│   ├── agent/
+│   │   ├── Agent.ts          # Core agent: model management, suggest(), init(), tool loop
+│   │   └── Agent.test.ts
+│   ├── models/
+│   │   ├── list.ts           # Static model catalog (MODELS array + DEFAULT_MODEL_ID)
+│   │   ├── registry.ts       # Factory: creates BaseChatModel per provider
+│   │   ├── ollama.ts         # Fetch local Ollama models from localhost:11434
+│   │   ├── persistence.ts    # Save/load selected model to ~/.dragon/state.json
+│   │   ├── availability.ts   # Filter models by available API keys
+│   │   └── *.test.ts
+│   ├── tool/
+│   │   ├── listFiles.ts      # Recursive directory listing (respects .gitignore)
+│   │   ├── readFile.ts       # Read file contents (sandboxed to project root)
+│   │   └── *.test.ts
+│   └── ui/
+│       ├── App.tsx           # Root Ink component — state, effects, submit logic
+│       ├── InputBar.tsx      # Query input, model selector (picker + freetext)
+│       ├── SnippetView.tsx   # Renders output: spinner, highlight, errors, history
+│       └── *.test.tsx
 ```
+
+---
 
 ## Key Files
 
-- **`src/index.tsx`** – renders the TUI and initializes the agent
-- **`src/agent/Agent.ts`** – main agent logic, orchestrating tool calls and LLM interactions
-- **`src/execution.ts`** – executes tools safely and returns results to the agent
-- **`src/models/registry.ts`** – manages available model providers (Ollama, Google, etc.)
-- **`src/models/persistence.ts`** – saves/restores selected models across sessions
-- **`src/models/ollama.ts`** – Ollama integration, dynamic model listing
-- **`src/models/availability.ts`** – checks provider reachability
-- **`src/tool/listFiles.ts`** – example tool for listing directory contents
-- **`src/ui/App.tsx`** – top-level TUI layout
-- **`src/ui/InputBar.tsx`** – user input component
-- **`src/ui/SnippetView.tsx`** – displays code or output
-- **`vitest.config.ts`** – test runner configuration
+| File | Role |
+|---|---|
+| `src/index.tsx` | Entry point. Loads `.env`, resolves startup model (saved > env > first available), creates `Agent`, renders `<App>`. |
+| `src/agent/Agent.ts` | Core logic. Wraps a LangChain `BaseChatModel`, exposes `suggest()` (coding assistance) and `init()` (project analysis). Implements a multi-turn tool-use loop with special handling for thinking/reasoning models (DeepSeek). |
+| `src/models/list.ts` | Static catalog of 7 known models across 5 providers (Anthropic, OpenAI, Google, DeepSeek, Ollama). |
+| `src/models/registry.ts` | Factory function `createModel()` that instantiates the correct LangChain chat model class based on provider and API key. |
+| `src/models/ollama.ts` | `fetchOllamaModels()` — queries `localhost:11434/api/tags`, deduplicates by model family, returns `ModelInfo[]`. Swallows all errors. |
+| `src/models/persistence.ts` | Persists the last-used model ID to `~/.dragon/state.json`. Failures are silently ignored. |
+| `src/models/availability.ts` | Filters the model list to only those whose provider API key is set in the environment. |
+| `src/ui/App.tsx` | Root UI component. Owns all application state: query history, current snippet, loading/error, selected model, tool call logs. Orchestrates model resolution, submission, and model switching. |
+| `src/ui/InputBar.tsx` | Dual-mode input: normal query entry and model selection (arrow-key picker or free-text entry). Renders the model badge and hints bar. |
+| `src/ui/SnippetView.tsx` | Renders output with `cli-highlight` syntax highlighting, a spinner during loading, elapsed time, tool call trace lines, and error display. |
+| `src/execution.ts` | Executes shell commands with `child_process.exec()`. Supports platform shell and PowerShell. |
+| `src/tool/listFiles.ts` | LangChain tool — recursively lists project files, respecting `.gitignore`, truncated at 5000 entries. |
+| `src/tool/readFile.ts` | LangChain tool — reads a file within the project root (path traversal is blocked). |
+
+---
 
 ## Architecture
 
-The application follows a layered architecture:
+### Technology Stack
 
-1. **TUI Layer (`src/ui/`)**  
-   React components rendered via Ink in the terminal. Handles user input and displays agent responses and tool output.
+- **Runtime**: Node.js (ES2022 modules)
+- **Language**: TypeScript (strict mode)
+- **UI Framework**: Ink 5 (React renderer for terminals)
+- **AI Layer**: LangChain (`@langchain/core` + provider-specific packages)
+- **Syntax Highlighting**: `cli-highlight`
+- **Testing**: Vitest + `ink-testing-library`
 
-2. **Agent Core (`src/agent/`) and Execution (`src/execution.ts`)**  
-   The agent processes user requests, decides which tools to invoke, and formats prompts for the selected LLM. The execution module runs tools in a controlled environment and returns results.
+### Provider Model
 
-3. **Model Abstraction (`src/models/`)**  
-   A registry pattern manages model providers. Each provider (Ollama, Google) implements a common interface for listing available models and interacting with them. Persistence ensures the last used model is retained.
+```
+┌──────────────────────────────────────────┐
+│                  Agent                    │
+│  suggest() / init()  +  tool-use loop    │
+└─────────────────┬────────────────────────┘
+                  │
+     ┌────────────▼────────────┐
+     │    model registry       │
+     │    createModel(info)    │
+     └────────┬───┬───┬───┬───┘
+              │   │   │   │
+    ┌─────────┘   │   │   └─────────┐
+    ▼             ▼   ▼             ▼
+ChatAnthropic  ChatOpenAI  ...  ChatDeepSeek
+(ChatOllama, ChatGoogleGenerativeAI)
+```
 
-4. **Tool System (`src/tool/`)**  
-   Tools are self-contained modules with a defined interface. They can perform filesystem operations, run shell commands, or execute custom logic. New tools are added by creating a module in `src/tool/`.
+Each provider requires its own API key environment variable. Ollama is the exception — it connects to a local instance with no key required.
 
-Data flow: User input → Agent → Tool selection → Execution → LLM call (via LangChain) → Response → UI update. Model selection and provider state are decoupled from the agent, allowing runtime switching without restart.
+### Data Flow (Snippet Generation)
 
-Testing is done with Vitest, covering unit tests for models, tools, and UI components using React Testing Library (Ink-compatible).
+```
+InputBar (query + Enter)
+  → App.handleSubmit(query)
+    → Agent.suggest(query, onToolCall)
+      → LangChain model.invoke() with system prompt + tools
+      → [optional tool calls: list_files / read_file]
+      → raw code snippet string
+    → SnippetView renders with cli-highlight
+```
+
+### Data Flow (Shell Execution)
+
+```
+InputBar ("!ls" or "!!Get-Process")
+  → App.handleSubmit(query)
+    → executeCommand(cmd, 'platform' | 'powershell')
+      → child_process.exec()
+    → SnippetView renders raw output (no highlighting)
+```
+
+### Model Selection Flow
+
+```
+User types "/model" → InputBar enters selectingModel mode
+  ├─ Picker mode: ↑↓ navigate, Enter select, Space → freetext
+  └─ Freetext mode: type arbitrary model name → Enter confirm
+→ App.handleModelChange(id)
+  → Agent.setModel(info)
+  → saveModel(id) → ~/.dragon/state.json
+```
+
+### Tool-Use Design
+
+The agent has two LangChain tools (`list_files` and `read_file`) that allow it to explore the project directory before answering. The tool loop in `Agent.invokeWithTools()` handles multi-turn conversations:
+
+- **Standard models**: accumulate `SystemMessage` → `HumanMessage` → `AIMessage` (with `tool_calls`) → `ToolMessage` turns.
+- **Thinking/reasoning models** (DeepSeek): LangChain drops `reasoning_content` on subsequent turns, causing API errors. The agent works around this by never passing the `AIMessage` back — instead accumulating tool results as text and rebuilding the conversation from scratch each turn.
+
+### Startup Model Resolution
+
+```
+savedModelId (from ~/.dragon/state.json)
+  ↓ fallback
+DRAGON_MODEL env var (or DEFAULT_MODEL_ID)
+  ↓ fallback
+first available model (by provider key presence)
+  ↓ fallback
+exit with error + missing-key messages
+```
+
+Ollama models are fetched asynchronously after mount and merged into the available list. If the saved model is an Ollama model that is no longer present, a dim notice is shown but the app continues with the startup model.
+
+### Key Bindings
+
+| Key | Context | Action |
+|---|---|---|
+| `Enter` | Default | Submit query |
+| `Enter` | Model picker | Select highlighted model |
+| `Enter` | Freetext model | Confirm typed model name |
+| `/model` | Default (typed in input) | Open model selector |
+| `↑` / `↓` | Model picker | Navigate model list |
+| `Space` | Model picker | Switch to free-text entry |
+| `Esc` | Model selection | Cancel, return to default |
+| `Ctrl+C` | Any | Exit application |
+| `!cmd` | Default query | Execute in platform shell |
+| `!!cmd` | Default query | Execute in PowerShell |
+
+### Special Commands
+
+| Input | Behavior |
+|---|---|
+| `/model` | Opens the model selector UI |
+| `/init` | Generates a project description markdown file (`dragon.md`) using agent tools |
+| `!command` | Runs `command` in the platform shell (cmd.exe on Windows, bash otherwise) |
+| `!!command` | Runs `command` in PowerShell (`powershell.exe` / `pwsh`) |
