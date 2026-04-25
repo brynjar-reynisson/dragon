@@ -13,9 +13,10 @@ interface Props {
   unavailableNotices: string[];
   onSubmit: (query: string) => void;
   onModelChange: (id: string) => void;
+  onInit: () => void;
 }
 
-export function InputBar({ disabled, selectedModel, models, unavailableNotices, onSubmit, onModelChange }: Props) {
+export function InputBar({ disabled, selectedModel, models, unavailableNotices, onSubmit, onModelChange, onInit }: Props) {
   const [query, setQuery] = useState('');
   const [inputMode, setInputMode] = useState<InputMode>('default');
   const [modelSelectMode, setModelSelectMode] = useState<ModelSelectMode>('picker');
@@ -54,6 +55,12 @@ export function InputBar({ disabled, selectedModel, models, unavailableNotices, 
       setInputModeSync('selectingModel');
       setModelSelectModeSync('picker');
       setModelCursorSync(0);
+      return;
+    }
+    if (value === '/init') {
+      queryRef.current = '';
+      setQuery('');
+      onInit();
       return;
     }
     queryRef.current = value;

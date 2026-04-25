@@ -105,6 +105,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
         unavailableNotices={unavailableProviderMessages()}
         onSubmit={handleSubmit}
         onModelChange={handleModelChange}
+        onInit={() => {}}
       />
     </Box>
   );
