@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text, useStdin } from 'ink';
+import { writeFile } from 'node:fs/promises';
 import { InputBar } from './InputBar.js';
 import { SnippetView } from './SnippetView.js';
 import type { Agent } from '../agent/Agent.js';
@@ -25,6 +26,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(initialModelId);
   const [models, setModels] = useState<ModelInfo[]>(availableModels());
+  const [toolCalls, setToolCalls] = useState<string[]>([]);
   const { setRawMode } = useStdin();
 
   useEffect(() => {
@@ -57,17 +59,27 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
     setError(null);
     setNotice(null);
     setSnippet('');
+    setToolCalls([]);
     setLastQuery(query);
     const isPs = query.startsWith('!!');
     const isShell = !isPs && query.startsWith('!');
+    const onToolCall = (name: string, args: Record<string, unknown>) => {
+      const label = Object.values(args).map(v => JSON.stringify(v)).join(', ');
+      setToolCalls(prev => [...prev, `${name}(${label})`]);
+    };
     try {
-      if (isPs || isShell) {
+      if (query === '/init') {
+        setHighlightSyntax(false);
+        const content = await agent.init(onToolCall);
+        await writeFile('./dragon.md', content, 'utf-8');
+        setSnippet(content);
+      } else if (isPs || isShell) {
         const cmd = query.slice(isPs ? 2 : 1).trim();
         const result = await executeCommand(cmd, isPs ? 'powershell' : 'platform');
         setHighlightSyntax(false);
         setSnippet(result);
       } else {
-        const result = await agent.suggest(query);
+        const result = await agent.suggest(query, onToolCall);
         setHighlightSyntax(true);
         setSnippet(result);
       }
@@ -96,7 +108,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
       {history.map((item, i) => (
         <SnippetView key={i} snippet={item.snippet} loading={false} error={item.error} query={item.query} highlightSyntax={item.highlightSyntax} />
       ))}
-      <SnippetView snippet={snippet} loading={loading} error={error} query={lastQuery} highlightSyntax={highlightSyntax} />
+      <SnippetView snippet={snippet} loading={loading} error={error} query={lastQuery} highlightSyntax={highlightSyntax} toolCalls={toolCalls} />
       {notice && <Text dimColor>{notice}</Text>}
       <InputBar
         disabled={loading}

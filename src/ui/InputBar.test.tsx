@@ -101,6 +101,14 @@ describe('InputBar', () => {
     expect(lastFrame()).toContain('llama3.2:latest');
   });
 
+  it('submits /init as a normal query on Enter', () => {
+    const onSubmit = vi.fn();
+    const { stdin } = render(<InputBar {...makeProps({ onSubmit })} />);
+    stdin.write('/init');
+    stdin.write('\r');
+    expect(onSubmit).toHaveBeenCalledWith('/init');
+  });
+
   it('shows unavailable provider notices below model list in picker', () => {
     const { lastFrame, stdin } = render(
       <InputBar {...makeProps({ unavailableNotices: ['Google models are not available without GOOGLE_API_KEY'] })} />
