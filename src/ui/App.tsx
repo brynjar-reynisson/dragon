@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text, useStdin } from 'ink';
+import { writeFile } from 'node:fs/promises';
 import { InputBar } from './InputBar.js';
 import { SnippetView } from './SnippetView.js';
 import type { Agent } from '../agent/Agent.js';
@@ -63,7 +64,9 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
     try {
       if (query === '/init') {
         setHighlightSyntax(false);
-        setSnippet('Initialized');
+        const content = await agent.init();
+        await writeFile('./dragon.md', content, 'utf-8');
+        setSnippet(content);
       } else if (isPs || isShell) {
         const cmd = query.slice(isPs ? 2 : 1).trim();
         const result = await executeCommand(cmd, isPs ? 'powershell' : 'platform');

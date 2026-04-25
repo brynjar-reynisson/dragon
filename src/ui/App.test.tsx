@@ -8,6 +8,10 @@ vi.mock('../execution.js', () => ({
   executeCommand: vi.fn().mockResolvedValue('command output'),
 }));
 
+vi.mock('node:fs/promises', () => ({
+  writeFile: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../models/ollama.js', () => ({
   fetchOllamaModels: vi.fn().mockResolvedValue([]),
 }));
@@ -36,6 +40,7 @@ describe('App', () => {
     agent = {
       suggest: vi.fn(),
       setModel: vi.fn(),
+      init: vi.fn(),
     } as unknown as Agent;
   });
 
@@ -151,12 +156,16 @@ describe('App', () => {
     expect(lastFrame()).not.toContain('Previously selected model');
   });
 
-  it('shows Initialized when /init is submitted', async () => {
+  it('calls agent.init and writes dragon.md when /init is submitted', async () => {
+    const { writeFile } = await import('node:fs/promises');
+    vi.mocked(agent.init).mockResolvedValue('# My Project\nA coding assistant.');
     const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
     stdin.write('/init');
     stdin.write('\r');
     await new Promise(r => setTimeout(r, 50));
-    expect(lastFrame()).toContain('Initialized');
+    expect(agent.init).toHaveBeenCalled();
+    expect(writeFile).toHaveBeenCalledWith('./dragon.md', '# My Project\nA coding assistant.', 'utf-8');
+    expect(lastFrame()).toContain('# My Project');
     expect(agent.suggest).not.toHaveBeenCalled();
   });
 
