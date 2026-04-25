@@ -49,6 +49,13 @@ describe('SnippetView', () => {
     expect(lastFrame()).toContain('function foo() {}');
   });
 
+  it('renders snippet as plain text when highlightSyntax is false', () => {
+    const { lastFrame } = render(
+      <SnippetView snippet="hello world" loading={false} error={null} query="" highlightSyntax={false} />
+    );
+    expect(lastFrame()).toContain('hello world');
+  });
+
   it('does not show query prefix when query is empty', () => {
     const { lastFrame } = render(
       <SnippetView snippet="function foo() {}" loading={false} error={null} query="" />

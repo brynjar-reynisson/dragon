@@ -7,6 +7,7 @@ import { type ModelInfo } from '../models/list.js';
 import { fetchOllamaModels } from '../models/ollama.js';
 import { saveModel } from '../models/persistence.js';
 import { availableModels, unavailableProviderMessages } from '../models/availability.js';
+import { executeCommand } from '../execution.js';
 
 interface Props {
   agent: Agent;
@@ -15,11 +16,12 @@ interface Props {
 }
 
 export function App({ agent, initialModelId, savedModelId }: Props) {
-  const [history, setHistory] = useState<Array<{ query: string; snippet: string; error: string | null }>>([]);
+  const [history, setHistory] = useState<Array<{ query: string; snippet: string; error: string | null; highlightSyntax: boolean }>>([]);
   const [snippet, setSnippet] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState('');
+  const [highlightSyntax, setHighlightSyntax] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(initialModelId);
   const [models, setModels] = useState<ModelInfo[]>(availableModels());
@@ -49,16 +51,26 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
 
   const handleSubmit = async (query: string) => {
     if (lastQuery && (snippet || error)) {
-      setHistory(h => [...h, { query: lastQuery, snippet, error }]);
+      setHistory(h => [...h, { query: lastQuery, snippet, error, highlightSyntax }]);
     }
     setLoading(true);
     setError(null);
     setNotice(null);
     setSnippet('');
     setLastQuery(query);
+    const isPs = query.startsWith('!!');
+    const isShell = !isPs && query.startsWith('!');
     try {
-      const result = await agent.suggest(query);
-      setSnippet(result);
+      if (isPs || isShell) {
+        const cmd = query.slice(isPs ? 2 : 1).trim();
+        const result = await executeCommand(cmd, isPs ? 'powershell' : 'platform');
+        setHighlightSyntax(false);
+        setSnippet(result);
+      } else {
+        const result = await agent.suggest(query);
+        setHighlightSyntax(true);
+        setSnippet(result);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -82,9 +94,9 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
   return (
     <Box flexDirection="column" padding={1}>
       {history.map((item, i) => (
-        <SnippetView key={i} snippet={item.snippet} loading={false} error={item.error} query={item.query} />
+        <SnippetView key={i} snippet={item.snippet} loading={false} error={item.error} query={item.query} highlightSyntax={item.highlightSyntax} />
       ))}
-      <SnippetView snippet={snippet} loading={loading} error={error} query={lastQuery} />
+      <SnippetView snippet={snippet} loading={loading} error={error} query={lastQuery} highlightSyntax={highlightSyntax} />
       {notice && <Text dimColor>{notice}</Text>}
       <InputBar
         disabled={loading}

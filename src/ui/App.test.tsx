@@ -4,6 +4,10 @@ import { render } from 'ink-testing-library';
 import { App } from './App.js';
 import type { Agent } from '../agent/Agent.js';
 
+vi.mock('../execution.js', () => ({
+  executeCommand: vi.fn().mockResolvedValue('command output'),
+}));
+
 vi.mock('../models/ollama.js', () => ({
   fetchOllamaModels: vi.fn().mockResolvedValue([]),
 }));
@@ -145,6 +149,37 @@ describe('App', () => {
     stdin.write('\r');
     await new Promise(r => setTimeout(r, 50));
     expect(lastFrame()).not.toContain('Previously selected model');
+  });
+
+  it('executes platform shell command when query starts with !', async () => {
+    const { executeCommand } = await import('../execution.js');
+    vi.mocked(executeCommand).mockResolvedValueOnce('hello');
+    const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('! echo hello');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(vi.mocked(executeCommand)).toHaveBeenCalledWith('echo hello', 'platform');
+    expect(lastFrame()).toContain('hello');
+  });
+
+  it('executes powershell command when query starts with !!', async () => {
+    const { executeCommand } = await import('../execution.js');
+    vi.mocked(executeCommand).mockResolvedValueOnce('ps-output');
+    const { stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('!! Get-Date');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(vi.mocked(executeCommand)).toHaveBeenCalledWith('Get-Date', 'powershell');
+  });
+
+  it('does not call agent.suggest for shell commands', async () => {
+    const { executeCommand } = await import('../execution.js');
+    vi.mocked(executeCommand).mockResolvedValueOnce('ok');
+    const { stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('! dir');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(agent.suggest).not.toHaveBeenCalled();
   });
 
   it('pushes previous query and snippet into history when a new request is submitted', async () => {

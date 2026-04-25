@@ -13,9 +13,10 @@ interface Props {
   loading: boolean;
   error: string | null;
   query: string;
+  highlightSyntax?: boolean;
 }
 
-export function SnippetView({ snippet, loading, error, query }: Props) {
+export function SnippetView({ snippet, loading, error, query, highlightSyntax = true }: Props) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -47,17 +48,21 @@ export function SnippetView({ snippet, loading, error, query }: Props) {
     );
   }
 
-  let highlighted: string;
-  try {
-    highlighted = highlight(snippet, { ignoreIllegals: true });
-  } catch {
-    highlighted = snippet;
+  let displayed: string;
+  if (highlightSyntax) {
+    try {
+      displayed = highlight(snippet, { ignoreIllegals: true });
+    } catch {
+      displayed = snippet;
+    }
+  } else {
+    displayed = snippet;
   }
   return (
     <Box flexDirection="column">
       {query && <Text dimColor>&gt; {query}</Text>}
       <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
-        <Text>{highlighted}</Text>
+        <Text>{displayed}</Text>
       </Box>
     </Box>
   );

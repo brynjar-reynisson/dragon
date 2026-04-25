@@ -34,7 +34,9 @@ Copy `.env.example` to `.env` and fill in the required API key for your chosen p
 
 Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for terminals). It accepts natural-language queries and returns raw code snippets with syntax highlighting.
 
-**Data flow:** `InputBar` (query + language) → `App.onSubmit` → `Agent.suggest()` → LangChain `BaseChatModel` → snippet string → `SnippetView` renders with `cli-highlight`.
+**Data flow (snippet):** `InputBar` → `App.onSubmit` → `Agent.suggest()` → LangChain `BaseChatModel` → snippet string → `SnippetView` renders with `cli-highlight`.
+
+**Data flow (execution):** Query starting with `!` → `executeCommand(cmd, 'platform')` (cmd.exe / bash). Query starting with `!!` → `executeCommand(cmd, 'powershell')`. Output shown in `SnippetView` without syntax highlighting.
 
 ### Model layer (`src/models/`)
 
