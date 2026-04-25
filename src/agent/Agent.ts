@@ -16,9 +16,8 @@ export class Agent {
     this.model = createModel(info);
   }
 
-  async suggest(prompt: string, language?: string): Promise<string> {
-    const langInstruction = language ? ` Use ${language}.` : '';
-    const system = `You are a coding assistant. Return ONLY a raw code snippet with no explanation, no markdown fences, and no prose.${langInstruction}`;
+  async suggest(prompt: string): Promise<string> {
+    const system = `You are a coding assistant. Return ONLY a raw code snippet with no explanation, no markdown fences, and no prose.`;
     const result = await this.model.invoke([
       new SystemMessage(system),
       new HumanMessage(prompt),

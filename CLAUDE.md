@@ -51,7 +51,7 @@ Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it
 ### UI (`src/ui/`)
 
 - `App.tsx` — root Ink component; owns state (`snippet`, `loading`, `error`, `notice`, `selectedModel`); uses `availableModels()` for initial models state; `savedModelId` prop drives deferred Ollama validation (silently switches if found, sets `notice` if not); `handleModelChange` calls `agent.setModel()`, `saveModel()`, and clears notice; renders `SnippetView`, optional dim notice line, then `InputBar`
-- `InputBar.tsx` — three modes: `default` (normal query), `editingLang` (`Ctrl+L`), `selectingModel` (triggered by typing `/model`). Shows `[model-id]` badge pinned right. Model picker shows arrow-key list followed by dim `unavailableNotices` lines; `Space` switches to free-text model entry; `Esc` cancels.
+- `InputBar.tsx` — two modes: `default` (normal query), `selectingModel` (triggered by typing `/model`). Shows `[model-id]` badge pinned right. Model picker shows arrow-key list followed by dim `unavailableNotices` lines; `Space` switches to free-text model entry; `Esc` cancels.
 - `SnippetView.tsx` — displays snippet via `cli-highlight`; shows spinner while loading; one-line red error on failure; usage hint on empty state
 
 ### Key bindings
@@ -59,7 +59,6 @@ Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it
 | Key | Action |
 |---|---|
 | `Enter` | Submit query (or confirm model selection) |
-| `Ctrl+L` | Toggle language override |
 | `/model` | Open model selector |
 | `↑` / `↓` | Navigate model picker |
 | `Space` | Switch to free-text model entry |

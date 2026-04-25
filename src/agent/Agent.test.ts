@@ -30,14 +30,6 @@ describe('Agent', () => {
     expect(await agent.suggest('declare a variable')).toBe('const x = 1;');
   });
 
-  it('includes language in system message when provided', async () => {
-    mockInvoke.mockResolvedValue({ content: 'fn foo() {}' });
-    const agent = new Agent('claude-sonnet-4-6');
-    await agent.suggest('write foo', 'rust');
-    const [systemMsg] = mockInvoke.mock.calls[0][0];
-    expect(systemMsg.content).toContain('Use rust');
-  });
-
   it('setModel calls createModel with the provided ModelInfo', () => {
     const agent = new Agent('claude-sonnet-4-6');
     vi.mocked(createModel).mockClear();

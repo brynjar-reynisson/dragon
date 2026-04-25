@@ -20,16 +20,15 @@ describe('InputBar', () => {
   it('shows model badge and keyboard hints', () => {
     const { lastFrame } = render(<InputBar {...makeProps()} />);
     expect(lastFrame()).toContain('[claude-sonnet-4-6]');
-    expect(lastFrame()).toContain('Ctrl+L');
     expect(lastFrame()).toContain('Enter');
   });
 
-  it('calls onSubmit with query and no language when Enter is pressed', () => {
+  it('calls onSubmit with query when Enter is pressed', () => {
     const onSubmit = vi.fn();
     const { stdin } = render(<InputBar {...makeProps({ onSubmit })} />);
     stdin.write('debounce function');
     stdin.write('\r');
-    expect(onSubmit).toHaveBeenCalledWith('debounce function', undefined);
+    expect(onSubmit).toHaveBeenCalledWith('debounce function');
   });
 
   it('shows model picker when /model is typed', () => {
@@ -84,13 +83,7 @@ describe('InputBar', () => {
     stdin.write('/model');
     expect(lastFrame()).toContain('↑↓: navigate');
     stdin.write('\x1b');
-    expect(lastFrame()).toContain('Ctrl+L');
-  });
-
-  it('Ctrl+L enters language mode showing lang: label', () => {
-    const { lastFrame, stdin } = render(<InputBar {...makeProps()} />);
-    stdin.write('\x0c');
-    expect(lastFrame()).toContain('lang:');
+    expect(lastFrame()).toContain('Enter: submit');
   });
 
   it('still renders when disabled', () => {

@@ -47,7 +47,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
     });
   }, [savedModelId, initialModelId, agent]);
 
-  const handleSubmit = async (query: string, language?: string) => {
+  const handleSubmit = async (query: string) => {
     if (lastQuery && (snippet || error)) {
       setHistory(h => [...h, { query: lastQuery, snippet, error }]);
     }
@@ -57,7 +57,7 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
     setSnippet('');
     setLastQuery(query);
     try {
-      const result = await agent.suggest(query, language);
+      const result = await agent.suggest(query);
       setSnippet(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');

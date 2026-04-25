@@ -37,7 +37,7 @@ describe('App', () => {
 
   it('renders input bar and empty snippet hint on load', () => {
     const { lastFrame } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
-    expect(lastFrame()).toContain('Ctrl+L');
+    expect(lastFrame()).toContain('Enter: submit');
     expect(lastFrame()).toContain('Type a request');
   });
 

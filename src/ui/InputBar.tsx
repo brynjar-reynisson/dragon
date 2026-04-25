@@ -3,7 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import type { ModelInfo } from '../models/list.js';
 
-type InputMode = 'default' | 'editingLang' | 'selectingModel';
+type InputMode = 'default' | 'selectingModel';
 type ModelSelectMode = 'picker' | 'freetext';
 
 interface Props {
@@ -11,13 +11,12 @@ interface Props {
   selectedModel: string;
   models: ModelInfo[];
   unavailableNotices: string[];
-  onSubmit: (query: string, language?: string) => void;
+  onSubmit: (query: string) => void;
   onModelChange: (id: string) => void;
 }
 
 export function InputBar({ disabled, selectedModel, models, unavailableNotices, onSubmit, onModelChange }: Props) {
   const [query, setQuery] = useState('');
-  const [language, setLanguage] = useState('');
   const [inputMode, setInputMode] = useState<InputMode>('default');
   const [modelSelectMode, setModelSelectMode] = useState<ModelSelectMode>('picker');
   const [modelCursor, setModelCursor] = useState(0);
@@ -26,7 +25,6 @@ export function InputBar({ disabled, selectedModel, models, unavailableNotices, 
   // Refs track latest values synchronously so submit handlers read the
   // correct value before React flushes the corresponding state update.
   const queryRef = useRef('');
-  const languageRef = useRef('');
   const modelTextRef = useRef('');
 
   // Mode refs so useInput always reads the latest mode even before React commits
@@ -60,11 +58,6 @@ export function InputBar({ disabled, selectedModel, models, unavailableNotices, 
     }
     queryRef.current = value;
     setQuery(value);
-  };
-
-  const handleLanguageChange = (value: string) => {
-    languageRef.current = value;
-    setLanguage(value);
   };
 
   const handleModelTextChange = (value: string) => {
@@ -101,30 +94,15 @@ export function InputBar({ disabled, selectedModel, models, unavailableNotices, 
       if (modelSelectModeRef.current === 'freetext' && key.escape) {
         setModelSelectModeSync('picker');
       }
-      return;
-    }
-
-    if (key.ctrl && input === 'l') {
-      const next = inputModeRef.current === 'editingLang' ? 'default' : 'editingLang';
-      setInputModeSync(next);
-      return;
-    }
-    if (key.escape && inputModeRef.current === 'editingLang') {
-      setInputModeSync('default');
     }
   }, { isActive: !disabled });
 
   const handleQuerySubmit = (_value: string) => {
     const current = queryRef.current.trim();
     if (!current) return;
-    onSubmit(current, languageRef.current.trim() || undefined);
+    onSubmit(current);
     queryRef.current = '';
     setQuery('');
-  };
-
-  const handleLangSubmit = (_value: string) => {
-    setLanguage(languageRef.current.trim());
-    setInputModeSync('default');
   };
 
   const handleModelTextSubmit = (_value: string) => {
@@ -137,23 +115,13 @@ export function InputBar({ disabled, selectedModel, models, unavailableNotices, 
 
   const hintsText = inputMode === 'selectingModel'
     ? '↑↓: navigate  •  Enter: select  •  Space: type name  •  Esc: cancel'
-    : 'Ctrl+L: set language  •  Enter: submit  •  Ctrl+C: exit';
+    : 'Enter: submit  •  Ctrl+C: exit';
 
   return (
     <Box flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1}>
       <Box justifyContent="space-between">
         <Box gap={1} flexGrow={1}>
-          {inputMode === 'editingLang' ? (
-            <>
-              <Text>lang:</Text>
-              <TextInput
-                value={language}
-                onChange={handleLanguageChange}
-                onSubmit={handleLangSubmit}
-                placeholder="e.g. typescript"
-              />
-            </>
-          ) : inputMode === 'selectingModel' && modelSelectMode === 'freetext' ? (
+          {inputMode === 'selectingModel' && modelSelectMode === 'freetext' ? (
             <>
               <Text>model:</Text>
               <TextInput
@@ -167,7 +135,6 @@ export function InputBar({ disabled, selectedModel, models, unavailableNotices, 
             <Text dimColor>Select a model below or press Space to type a name...</Text>
           ) : (
             <>
-              {language && <Text dimColor>[lang: {language}]</Text>}
               <TextInput
                 value={query}
                 onChange={handleQueryChange}
