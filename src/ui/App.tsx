@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Text, useStdin } from 'ink';
+import { Box, Text, useStdin, Static } from 'ink';
 import { writeFile } from 'node:fs/promises';
 import { InputBar } from './InputBar.js';
 import { SnippetView } from './SnippetView.js';
@@ -105,9 +105,11 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
 
   return (
     <Box flexDirection="column" padding={1}>
-      {history.map((item, i) => (
-        <SnippetView key={i} snippet={item.snippet} loading={false} error={item.error} query={item.query} highlightSyntax={item.highlightSyntax} />
-      ))}
+      <Static items={history}>
+        {(item, i) => (
+          <SnippetView key={i} snippet={item.snippet} loading={false} error={item.error} query={item.query} highlightSyntax={item.highlightSyntax} />
+        )}
+      </Static>
       <SnippetView snippet={snippet} loading={loading} error={error} query={lastQuery} highlightSyntax={highlightSyntax} toolCalls={toolCalls} />
       {notice && <Text dimColor>{notice}</Text>}
       <InputBar
