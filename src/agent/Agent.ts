@@ -4,8 +4,9 @@ import { createModel } from '../models/registry.js';
 import { MODELS, type ModelInfo } from '../models/list.js';
 import { listFilesTool, listFilesInDir } from '../tool/listFiles.js';
 import { readFileTool } from '../tool/readFile.js';
+import { grepFilesTool } from '../tool/grepFiles.js';
 
-const TOOLS = [listFilesTool, readFileTool];
+const TOOLS = [listFilesTool, readFileTool, grepFilesTool];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyTool = { name: string; invoke: (args: any) => Promise<unknown> };
@@ -61,7 +62,9 @@ export class Agent {
       const toolCalls = response.tool_calls ?? [];
 
       if (toolCalls.length === 0) {
-        if (typeof response.content !== 'string') throw new Error('Unexpected response type');
+        if (typeof response.content !== 'string') throw new Error(
+          `Unexpected response type: ${typeof response.content}\n${JSON.stringify(response.content, null, 2)}`
+        );
         return response.content.trim();
       }
 
@@ -89,6 +92,26 @@ export class Agent {
 Use them when the user's request requires understanding project structure or file contents.
 When you have gathered enough context, return ONLY a raw code snippet with no explanation, no markdown fences, and no prose.`,
       prompt,
+      onToolCall,
+    );
+  }
+
+  async edit(query: string, onToolCall?: OnToolCall): Promise<string> {
+    return this.invokeWithTools(
+      TOOLS,
+      `You are a code editor assistant. Use the available tools to explore the codebase and fully understand the relevant code before suggesting changes.
+
+Respond with the minimal set of changes needed, using this exact format for each changed file:
+
+FILE: <relative path>
+DELETE:
+<exact lines to delete, copied verbatim>
+REPLACE WITH:
+<replacement lines>
+---
+
+Repeat the block for each file that needs changes. Be precise: the DELETE lines must match the file exactly so they can be applied programmatically.`,
+      query,
       onToolCall,
     );
   }

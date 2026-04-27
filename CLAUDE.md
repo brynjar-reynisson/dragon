@@ -36,6 +36,8 @@ Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for ter
 
 **Data flow (snippet):** `InputBar` → `App.onSubmit` → `Agent.suggest()` → LangChain `BaseChatModel` → snippet string → `SnippetView` renders with `cli-highlight`.
 
+**Data flow (edit):** Query starting with `/edit` or `/e` → `App.onSubmit` → `Agent.edit()` → tool loop (listFiles, readFile, grepFiles) → diff-format string → `SnippetView` without syntax highlighting.
+
 **Data flow (execution):** Query starting with `!` → `executeCommand(cmd, 'platform')` (cmd.exe / bash). Query starting with `!!` → `executeCommand(cmd, 'powershell')`. Output shown in `SnippetView` without syntax highlighting.
 
 ### Model layer (`src/models/`)
@@ -46,9 +48,15 @@ Dragon is a terminal UI (TUI) coding assistant built with **Ink** (React for ter
 - `persistence.ts` — `loadSavedModel(): string | null`; `saveModel(id: string): void`; state file at `~/.dragon/state.json`; errors silently swallowed
 - `availability.ts` — `availableModels(): ModelInfo[]` filters `MODELS` to providers with a non-empty API key; `unavailableProviderMessages(): string[]` returns one dim message per missing cloud provider
 
+### Tools (`src/tool/`)
+
+- `listFiles.ts` — `listFilesTool` / `listFilesInDir(path)`: walks directory tree, returns formatted string
+- `readFile.ts` — `readFileTool`: reads a file by relative path, safety-checks against project root
+- `grepFiles.ts` — `grepFilesTool` / `grepInProject(pattern, path?, glob?, root?)`: runs ripgrep via `@vscode/ripgrep`, returns `rel-path:line:content` lines; capped at 500 lines; rejects paths outside root
+
 ### Agent (`src/agent/Agent.ts`)
 
-Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it to a `ModelInfo` from `MODELS`, and throws for unknown startup model IDs. Exposes `setModel(info: ModelInfo)` for runtime switching (caller resolves provider). `suggest(query, language?)` builds `[SystemMessage, HumanMessage]` and calls `model.invoke()`.
+Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it to a `ModelInfo` from `MODELS`, and throws for unknown startup model IDs. Exposes `setModel(info: ModelInfo)` for runtime switching (caller resolves provider). `suggest(query, language?)` builds `[SystemMessage, HumanMessage]` and calls `model.invoke()`. `edit(query, onToolCall?)` runs a tool loop with listFiles, readFile, and grepFiles then returns a structured diff (FILE/DELETE/REPLACE WITH blocks). `init(onToolCall?)` lists project files and generates `dragon.md`.
 
 ### UI (`src/ui/`)
 
@@ -58,9 +66,11 @@ Owns a `BaseChatModel` instance. Constructor takes `initialModelId`, resolves it
 
 ### Key bindings
 
-| Key | Action |
+| Key / Command | Action |
 |---|---|
 | `Enter` | Submit query (or confirm model selection) |
+| `/edit <query>` or `/e <query>` | Edit mode: explore codebase and return structured diff |
+| `/init` | Generate `dragon.md` from project structure |
 | `/model` | Open model selector |
 | `↑` / `↓` | Navigate model picker |
 | `Space` | Switch to free-text model entry |
@@ -73,4 +83,4 @@ Tests live alongside source files (`*.test.ts` / `*.test.tsx`). `src/test-setup.
 
 ## Iteration 1 scope
 
-Snippet suggestions only — no file editing, code execution, git operations, streaming, or persistent history.
+Snippet suggestions, edit mode (structured diff output), and `/init`. No actual file writes from edit suggestions, no streaming, no persistent history.

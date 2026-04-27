@@ -67,8 +67,13 @@ export function App({ agent, initialModelId, savedModelId }: Props) {
       const label = Object.values(args).map(v => JSON.stringify(v)).join(', ');
       setToolCalls(prev => [...prev, `${name}(${label})`]);
     };
+    const editMatch = query.match(/^\/(?:edit|e)\s+([\s\S]+)/);
     try {
-      if (query === '/init') {
+      if (editMatch) {
+        setHighlightSyntax(false);
+        const result = await agent.edit(editMatch[1], onToolCall);
+        setSnippet(result);
+      } else if (query === '/init') {
         setHighlightSyntax(false);
         const content = await agent.init(onToolCall);
         await writeFile('./dragon.md', content, 'utf-8');

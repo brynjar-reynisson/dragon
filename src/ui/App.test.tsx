@@ -41,6 +41,7 @@ describe('App', () => {
       suggest: vi.fn(),
       setModel: vi.fn(),
       init: vi.fn(),
+      edit: vi.fn(),
     } as unknown as Agent;
   });
 
@@ -154,6 +155,27 @@ describe('App', () => {
     stdin.write('\r');
     await new Promise(r => setTimeout(r, 50));
     expect(lastFrame()).not.toContain('Previously selected model');
+  });
+
+  it('calls agent.edit with query text for /edit <text>', async () => {
+    vi.mocked(agent.edit).mockResolvedValue('FILE: src/app.ts\nDELETE:\nold line\nREPLACE WITH:\nnew line\n---');
+    const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('/edit rename x in src/app.ts');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(agent.edit).toHaveBeenCalledWith('rename x in src/app.ts', expect.any(Function));
+    expect(lastFrame()).toContain('FILE: src/app.ts');
+    expect(agent.suggest).not.toHaveBeenCalled();
+  });
+
+  it('calls agent.edit with query text for /e <text>', async () => {
+    vi.mocked(agent.edit).mockResolvedValue('FILE: src/app.ts\nDELETE:\nold\nREPLACE WITH:\nnew\n---');
+    const { lastFrame, stdin } = render(<App agent={agent} initialModelId="claude-sonnet-4-6" savedModelId={null} />);
+    stdin.write('/e rename x in src/app.ts');
+    stdin.write('\r');
+    await new Promise(r => setTimeout(r, 50));
+    expect(agent.edit).toHaveBeenCalledWith('rename x in src/app.ts', expect.any(Function));
+    expect(lastFrame()).toContain('FILE: src/app.ts');
   });
 
   it('calls agent.init and writes dragon.md when /init is submitted', async () => {

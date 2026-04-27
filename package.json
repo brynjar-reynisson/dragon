@@ -21,6 +21,7 @@
     "@langchain/google-genai": "^2.1.27",
     "@langchain/ollama": "^1.2.6",
     "@langchain/openai": "^1.4.4",
+    "@vscode/ripgrep": "^1.17.1",
     "cli-highlight": "^2.1.11",
     "dotenv": "^17.4.2",
     "ignore": "^7.0.5",

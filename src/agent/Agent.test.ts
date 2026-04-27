@@ -10,10 +10,15 @@ vi.mock('../tool/readFile.js', () => ({
   readFileTool: { name: 'read_file', invoke: vi.fn() },
 }));
 
+vi.mock('../tool/grepFiles.js', () => ({
+  grepFilesTool: { name: 'grep_files', invoke: vi.fn() },
+}));
+
 import { Agent } from './Agent.js';
 import { createModel } from '../models/registry.js';
 import { listFilesTool, listFilesInDir } from '../tool/listFiles.js';
 import { readFileTool } from '../tool/readFile.js';
+import { grepFilesTool } from '../tool/grepFiles.js';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 describe('Agent', () => {
@@ -52,10 +57,10 @@ describe('Agent', () => {
     expect(createModel).toHaveBeenCalledWith({ id: 'llama3.2:latest', provider: 'ollama' });
   });
 
-  it('throws when response content is not a string', async () => {
+  it('throws with type and content when response content is not a string', async () => {
     mockBoundInvoke.mockResolvedValue({ content: [{ type: 'image' }], tool_calls: [] });
     const agent = new Agent('claude-sonnet-4-6');
-    await expect(agent.suggest('foo')).rejects.toThrow('Unexpected response type');
+    await expect(agent.suggest('foo')).rejects.toThrow('Unexpected response type: object');
   });
 
   it('propagates model errors', async () => {
@@ -118,6 +123,35 @@ describe('Agent', () => {
     expect(secondCallMessages).toHaveLength(2); // SystemMessage + HumanMessage only
   });
 
+  it('edit() returns suggested changes from the model', async () => {
+    mockBoundInvoke.mockResolvedValue({
+      content: 'FILE: src/app.ts\nDELETE:\nconst x = 1;\nREPLACE WITH:\nconst x = 2;\n---',
+      tool_calls: [],
+    });
+    const agent = new Agent('claude-sonnet-4-6');
+    const result = await agent.edit('rename x to use value 2 in src/app.ts');
+    expect(result).toContain('FILE: src/app.ts');
+    expect(result).toContain('REPLACE WITH:');
+  });
+
+  it('edit() fires onToolCall when tools are used', async () => {
+    vi.mocked(grepFilesTool.invoke).mockResolvedValue('src/app.ts:1:const x = 1;');
+    mockBoundInvoke
+      .mockResolvedValueOnce({
+        content: '',
+        tool_calls: [{ id: 'c1', name: 'grep_files', args: { pattern: 'const x' } }],
+        additional_kwargs: {},
+      })
+      .mockResolvedValueOnce({
+        content: 'FILE: src/app.ts\nDELETE:\nconst x = 1;\nREPLACE WITH:\nconst x = 2;\n---',
+        tool_calls: [],
+      });
+    const onToolCall = vi.fn();
+    const agent = new Agent('claude-sonnet-4-6');
+    await agent.edit('rename x', onToolCall);
+    expect(onToolCall).toHaveBeenCalledWith('grep_files', { pattern: 'const x' });
+  });
+
   it('init() lists files and passes tree to the model', async () => {
     vi.mocked(listFilesInDir).mockResolvedValue('src/\npackage.json');
     mockBoundInvoke.mockResolvedValue({ content: '# My Project\nA coding assistant.', tool_calls: [] });
@@ -163,10 +197,10 @@ describe('Agent', () => {
     expect(onToolCall).toHaveBeenCalledWith('read_file', { path: 'package.json' });
   });
 
-  it('init() throws when final model response is not a string', async () => {
+  it('init() throws with type and content when final model response is not a string', async () => {
     vi.mocked(listFilesInDir).mockResolvedValue('src/');
     mockBoundInvoke.mockResolvedValue({ content: [{ type: 'image' }], tool_calls: [] });
     const agent = new Agent('claude-sonnet-4-6');
-    await expect(agent.init()).rejects.toThrow('Unexpected response type');
+    await expect(agent.init()).rejects.toThrow('Unexpected response type: object');
   });
 });
